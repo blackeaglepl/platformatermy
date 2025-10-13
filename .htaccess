@@ -1,0 +1,17 @@
+AddHandler application/x-httpd-php82 .php
+Options +SymLinksIfOwnerMatch
+RewriteEngine On
+
+# Handle http -> https redirect
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# public path issue on prod
+RewriteRule ^$ public/ [L]
+RewriteRule (.*) public/$1 [L]
+
+# Allow Installatron requests
+RewriteCond %{REQUEST_FILENAME} deleteme\.\w+\.php
+RewriteRule (.*) - [L]
+
+RewriteRule ^ index.php [L]

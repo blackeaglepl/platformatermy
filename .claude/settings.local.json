@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude mcp add:*)",
+      "Bash(claude mcp remove context7)",
+      "Bash(claude mcp remove:*)",
+      "Bash(dir:*)",
+      "Bash(git clone:*)",
+      "Bash(php:*)",
+      "Bash(docker run:*)",
+      "Bash(MSYS_NO_PATHCONV=1 docker run --rm -v \"/f/Windsurf/PlatformaPakiety:/var/www/html\" -w /var/www/html laravelsail/php83-composer:latest composer install --ignore-platform-reqs)",
+      "Bash(npm install)",
+      "Bash(./vendor/bin/sail:*)",
+      "Bash(docker-compose up:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
