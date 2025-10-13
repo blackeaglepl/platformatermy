@@ -12,7 +12,7 @@
 
 ## 🎯 Przegląd projektu
 
-**Nazwa:** Platforma Pakiety / TermyGórce Admin Panel
+**Nazwa:** Platforma Pakiety / TermyGorce Admin Panel
 **Wersja:** 1.0
 **Ostatnia aktualizacja:** Październik 2025
 
