@@ -11,7 +11,15 @@
       "Bash(MSYS_NO_PATHCONV=1 docker run --rm -v \"/f/Windsurf/PlatformaPakiety:/var/www/html\" -w /var/www/html laravelsail/php83-composer:latest composer install --ignore-platform-reqs)",
       "Bash(npm install)",
       "Bash(./vendor/bin/sail:*)",
-      "Bash(docker-compose up:*)"
+      "Bash(docker-compose up:*)",
+      "Bash(cat:*)",
+      "Bash(curl:*)",
+      "Bash(npm run dev:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr :5173)",
+      "Bash(findstr:*)",
+      "Bash(docker exec:*)"
     ],
     "deny": [],
     "ask": []

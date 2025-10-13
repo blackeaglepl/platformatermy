@@ -422,22 +422,35 @@ resources/js/Pages/
 
 ---
 
+## 📝 Sposób pracy z projektem
+
+### Workflow z Claude Code
+1. **Przed rozpoczęciem pracy:**
+   - Przeczytaj [task.md](task.md) aby sprawdzić co zostało już zrobione
+   - Zaktualizuj statusy zadań w [task.md](task.md)
+
+2. **Podczas pracy:**
+   - Używaj TodoWrite tool do zarządzania bieżącymi zadaniami
+   - Po zakończeniu każdego zadania aktualizuj [task.md](task.md)
+   - Zapisuj ważne decyzje i zmiany w [task.md](task.md)
+
+3. **Po zakończeniu sesji:**
+   - Upewnij się że wszystkie zmiany są zapisane w [task.md](task.md)
+   - Zacommituj zmiany do Git z opisowymi wiadomościami
+
+### Dokumentacja zadań
+Szczegółowe zarządzanie zadaniami i postępami znajduje się w **[task.md](task.md)**
+
+---
+
 ## 📝 Notatki deweloperskie
 
-### Rzeczy do zrobienia
-1. ✅ Dokumentacja w claude.md
-2. ⏳ Migracje dla systemu pakietów
-3. ⏳ Modele i relacje Eloquent
-4. ⏳ Kontrolery API
-5. ⏳ Komponenty React (TypeScript)
-6. ⏳ Seedery z przykładowymi danymi
-7. ⏳ Testy jednostkowe (Pest PHP)
-
-### Rzeczy do NIE ZMIENIAĆ
+### ⚠️ Rzeczy do NIE ZMIENIAĆ (KRYTYCZNE)
 - ❌ Endpointy `/api/traffic` i `/api/alerts`
 - ❌ Struktura response JSON dla Astro
 - ❌ Modele `Alert` i `Traffic`
 - ❌ Tabele `alerts` i `traffic` w bazie danych
+- ❌ Istniejące migracje w `database/migrations/`
 
 ### Pytania do rozważenia
 - Czy pakiety mają datę ważności?

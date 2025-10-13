@@ -1,0 +1,46 @@
+export interface PackageService {
+    id: number;
+    name: string;
+    zone: 'relaksu' | 'odnowy' | 'smaku';
+    description: string | null;
+    duration: number | null;
+}
+
+export interface PackageServiceUsage {
+    id: number;
+    service_name: string;
+    service_description: string | null;
+    service_duration: number | null;
+    is_used: boolean;
+    used_at: string | null;
+    marked_by: string | null;
+    notes: string | null;
+}
+
+export interface Package {
+    id: number;
+    custom_id: string;
+    package_type: number;
+    created_by: string;
+    created_at: string;
+    usage_percentage: number;
+    is_fully_used: boolean;
+}
+
+export interface PackageWithUsages extends Package {
+    usages_by_zone: {
+        relaksu: PackageServiceUsage[];
+        odnowy: PackageServiceUsage[];
+        smaku: PackageServiceUsage[];
+    };
+}
+
+export interface PackageType {
+    type: number;
+    name: string;
+    services_by_zone: {
+        relaksu?: PackageService[];
+        odnowy?: PackageService[];
+        smaku?: PackageService[];
+    };
+}

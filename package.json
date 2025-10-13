@@ -3,7 +3,11 @@
     "type": "module",
     "scripts": {
         "build": "tsc && vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "sail:up": "vendor/bin/sail up -d",
+        "sail:down": "vendor/bin/sail down",
+        "sail:logs": "vendor/bin/sail logs -f",
+        "start": "concurrently \"npm run sail:up\" \"npm run dev\" --names \"SAIL,VITE\" --prefix-colors \"blue,green\""
     },
     "devDependencies": {
         "@headlessui/react": "^2.0.0",

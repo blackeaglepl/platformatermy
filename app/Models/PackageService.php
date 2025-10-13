@@ -11,6 +11,7 @@ class PackageService extends Model
 
     protected $fillable = [
         'name',
+        'zone',
         'description',
         'duration',
     ];

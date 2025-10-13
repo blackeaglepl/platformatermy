@@ -27,9 +27,24 @@ class Package extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function usages()
+    {
+        return $this->hasMany(PackageServiceUsage::class);
+    }
+
     public function getUsagePercentageAttribute()
     {
-        // TODO: Calculate usage percentage
-        return 0;
+        $totalServices = $this->usages()->count();
+        if ($totalServices === 0) {
+            return 0;
+        }
+
+        $usedServices = $this->usages()->whereNotNull('used_at')->count();
+        return round(($usedServices / $totalServices) * 100);
+    }
+
+    public function isFullyUsed()
+    {
+        return $this->usage_percentage === 100;
     }
 }

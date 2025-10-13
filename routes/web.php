@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PackageController;
+use App\Http\Controllers\PackageServiceUsageController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -34,18 +36,16 @@ Route::get('/dashboard', function () {
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::get('/packages', function () {
-    return Inertia::render('Packages/Index');
-})->middleware(['auth', 'verified'])->name('packages.index');
+// Package routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/packages', [PackageController::class, 'index'])->name('packages.index');
+    Route::get('/packages/create', [PackageController::class, 'create'])->name('packages.create');
+    Route::post('/packages', [PackageController::class, 'store'])->name('packages.store');
+    Route::get('/packages/{package}', [PackageController::class, 'show'])->name('packages.show');
 
-Route::get('/packages/create', function () {
-    return Inertia::render('Packages/Create');
-})->middleware(['auth', 'verified'])->name('packages.create');
-
-Route::post('/packages', function (Request $request) {
-    // TODO: Add validation and store logic
-    return Redirect::route('packages.index');
-})->middleware(['auth'])->name('packages.store');
+    // Service usage routes
+    Route::post('/package-usage/{usage}/toggle', [PackageServiceUsageController::class, 'toggle'])->name('package-usage.toggle');
+});
 
 Route::patch('/dashboard', function (Request $request) {
     if ($request->type || $request->text) {

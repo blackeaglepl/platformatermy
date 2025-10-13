@@ -1,8 +1,13 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PageProps } from '@/types';
+import { Package } from '@/types/package';
 import { Head, Link } from '@inertiajs/react';
 
-export default function Index({ auth }: PageProps) {
+interface Props extends PageProps {
+    packages: Package[];
+}
+
+export default function Index({ auth, packages }: Props) {
     return (
         <AuthenticatedLayout
             header={
@@ -28,7 +33,81 @@ export default function Index({ auth }: PageProps) {
                                     Dodaj Pakiet
                                 </Link>
                             </div>
-                            <p>W tym miejscu znajdzie się lista wszystkich pakietów.</p>
+
+                            {packages.length === 0 ? (
+                                <div className="text-center py-8 text-gray-500">
+                                    <p>Brak pakietów. Dodaj pierwszy pakiet klikając przycisk "Dodaj Pakiet".</p>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    ID Pakietu
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Typ
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Wykorzystanie
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Utworzono przez
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Data utworzenia
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Akcje
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {packages.map((pkg) => (
+                                                <tr
+                                                    key={pkg.id}
+                                                    className={pkg.is_fully_used ? 'bg-gray-200' : 'hover:bg-gray-50'}
+                                                >
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                        {pkg.custom_id}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        Pakiet {pkg.package_type}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        <div className="flex items-center">
+                                                            <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
+                                                                <div
+                                                                    className="bg-blue-600 h-2.5 rounded-full"
+                                                                    style={{ width: `${pkg.usage_percentage}%` }}
+                                                                ></div>
+                                                            </div>
+                                                            <span className="text-xs font-medium">
+                                                                {pkg.usage_percentage}%
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {pkg.created_by}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {pkg.created_at}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                        <Link
+                                                            href={route('packages.show', pkg.id)}
+                                                            className="text-indigo-600 hover:text-indigo-900"
+                                                        >
+                                                            Szczegóły
+                                                        </Link>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

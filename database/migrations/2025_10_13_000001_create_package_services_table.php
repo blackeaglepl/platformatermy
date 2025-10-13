@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('package_services', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('zone'); // 'relaksu', 'odnowy', 'smaku'
             $table->text('description')->nullable();
             $table->integer('duration')->nullable();
             $table->timestamps();
