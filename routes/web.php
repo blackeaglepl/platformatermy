@@ -42,6 +42,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/packages/create', [PackageController::class, 'create'])->name('packages.create');
     Route::post('/packages', [PackageController::class, 'store'])->name('packages.store');
     Route::get('/packages/{package}', [PackageController::class, 'show'])->name('packages.show');
+    Route::patch('/packages/{package}/notes', [PackageController::class, 'updateNotes'])->name('packages.update-notes');
 
     // Service usage routes
     Route::post('/package-usage/{usage}/toggle', [PackageServiceUsageController::class, 'toggle'])->name('package-usage.toggle');

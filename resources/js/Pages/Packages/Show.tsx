@@ -1,17 +1,25 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PageProps } from '@/types';
 import { PackageWithUsages, PackageServiceUsage } from '@/types/package';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
 interface Props extends PageProps {
     package: PackageWithUsages;
+    flash?: {
+        success?: string;
+    };
 }
 
-export default function Show({ auth, package: pkg }: Props) {
+export default function Show({ auth, package: pkg, flash }: Props) {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [pendingUsageId, setPendingUsageId] = useState<number | null>(null);
     const [pendingServiceName, setPendingServiceName] = useState<string>('');
+    const [isEditingNotes, setIsEditingNotes] = useState(false);
+
+    const { data: notesData, setData: setNotesData, patch: patchNotes, processing: processingNotes } = useForm({
+        notes: pkg.notes || '',
+    });
 
     const handleToggleUsage = (usage: PackageServiceUsage) => {
         // Jeśli usługa jest już wykorzystana, pytamy o potwierdzenie
@@ -50,6 +58,20 @@ export default function Show({ auth, package: pkg }: Props) {
         setShowConfirmModal(false);
         setPendingUsageId(null);
         setPendingServiceName('');
+    };
+
+    const handleSaveNotes = () => {
+        patchNotes(route('packages.update-notes', pkg.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsEditingNotes(false);
+            }
+        });
+    };
+
+    const handleCancelEditNotes = () => {
+        setNotesData('notes', pkg.notes || '');
+        setIsEditingNotes(false);
     };
 
     const renderServiceList = (services: PackageServiceUsage[], title: string, icon: string) => {
@@ -129,6 +151,13 @@ export default function Show({ auth, package: pkg }: Props) {
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    {/* Success Message */}
+                    {flash?.success && (
+                        <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
+                            <span className="block sm:inline">{flash.success}</span>
+                        </div>
+                    )}
+
                     {/* Single Unified Card */}
                     <div className={`overflow-hidden shadow-sm sm:rounded-lg ${
                         pkg.is_fully_used ? 'bg-gray-300' : 'bg-white'
@@ -177,6 +206,68 @@ export default function Show({ auth, package: pkg }: Props) {
                                         ✓ Pakiet w pełni wykorzystany
                                     </div>
                                 )}
+                            </div>
+
+                            {/* Notes Section */}
+                            <div className="mb-6">
+                                <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h4 className="font-semibold text-gray-900 flex items-center">
+                                            <span className="mr-2">📝</span>
+                                            Uwagi dodatkowe
+                                        </h4>
+                                        {!isEditingNotes && (
+                                            <button
+                                                onClick={() => setIsEditingNotes(true)}
+                                                className="text-sm text-indigo-600 hover:text-indigo-900 font-medium"
+                                            >
+                                                Edytuj
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {isEditingNotes ? (
+                                        <div>
+                                            <textarea
+                                                value={notesData.notes}
+                                                onChange={(e) => setNotesData('notes', e.target.value)}
+                                                maxLength={500}
+                                                rows={4}
+                                                className="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                                placeholder="np. Jacuzzi VIP z przystawkami, preferencje klienta..."
+                                            />
+                                            <div className="flex justify-between items-center mt-2">
+                                                <span className="text-xs text-gray-500">
+                                                    {notesData.notes.length} / 500
+                                                </span>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={handleCancelEditNotes}
+                                                        disabled={processingNotes}
+                                                        className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50"
+                                                    >
+                                                        Anuluj
+                                                    </button>
+                                                    <button
+                                                        onClick={handleSaveNotes}
+                                                        disabled={processingNotes}
+                                                        className="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+                                                    >
+                                                        {processingNotes ? 'Zapisywanie...' : 'Zapisz'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-sm text-gray-700">
+                                            {pkg.notes ? (
+                                                <p className="whitespace-pre-wrap">{pkg.notes}</p>
+                                            ) : (
+                                                <p className="text-gray-400 italic">Brak uwag</p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Divider */}

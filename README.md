@@ -40,9 +40,9 @@ npm install
 
 ---
 
-## 🎮 Komendy uruchomieniowe
+## 🎮 Komendy start projektu
 
-### Windows - Pliki .bat (NAJPROSTSZE)
+### Windows - Pliki .bat 
 
 | Komenda | Opis |
 |---------|------|

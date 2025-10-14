@@ -70,18 +70,30 @@ class PackageController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'custom_id' => 'required|string|unique:packages,custom_id|max:255',
+            'custom_id' => 'required|string|max:255',
             'package_type' => 'required|integer|min:1|max:6',
+            'notes' => 'nullable|string|max:500',
         ]);
 
         DB::beginTransaction();
 
         try {
+            // Generate unique custom_id (auto-increment if duplicate)
+            $baseCustomId = $validated['custom_id'];
+            $finalCustomId = $baseCustomId;
+            $counter = 2;
+
+            while (Package::where('custom_id', $finalCustomId)->exists()) {
+                $finalCustomId = $baseCustomId . '_' . $counter;
+                $counter++;
+            }
+
             // Create package
             $package = Package::create([
-                'custom_id' => $validated['custom_id'],
+                'custom_id' => $finalCustomId,
                 'package_type' => $validated['package_type'],
                 'created_by' => Auth::id(),
+                'notes' => $validated['notes'] ?? null,
             ]);
 
             // Get services for this package type
@@ -104,8 +116,14 @@ class PackageController extends Controller
 
             DB::commit();
 
+            // Prepare success message
+            $message = 'Pakiet został utworzony pomyślnie!';
+            if ($finalCustomId !== $baseCustomId) {
+                $message .= " ID zostało zmienione na: {$finalCustomId}";
+            }
+
             return redirect()->route('packages.show', $package->id)
-                ->with('success', 'Pakiet został utworzony pomyślnie!');
+                ->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -143,6 +161,7 @@ class PackageController extends Controller
                 'created_at' => $package->created_at->format('Y-m-d H:i'),
                 'usage_percentage' => $package->usage_percentage,
                 'is_fully_used' => $package->isFullyUsed(),
+                'notes' => $package->notes,
                 'usages_by_zone' => [
                     'relaksu' => $usagesByZone->get('relaksu', collect())->map(function ($usage) {
                         return $this->formatUsage($usage);
@@ -159,6 +178,22 @@ class PackageController extends Controller
                 })->values(),
             ],
         ]);
+    }
+
+    /**
+     * Update package notes.
+     */
+    public function updateNotes(Request $request, Package $package)
+    {
+        $validated = $request->validate([
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $package->update([
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        return back()->with('success', 'Uwagi zostały zaktualizowane!');
     }
 
     /**

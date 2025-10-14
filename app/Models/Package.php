@@ -13,6 +13,7 @@ class Package extends Model
         'custom_id',
         'package_type',
         'created_by',
+        'notes',
     ];
 
     protected $casts = [

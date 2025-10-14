@@ -10,6 +10,7 @@ export default function Create({ auth }: PageProps) {
     const { data, setData, post, processing, errors } = useForm({
         package_type: '1',
         custom_id: '',
+        notes: '',
     });
 
     const submit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -61,8 +62,35 @@ export default function Create({ auth }: PageProps) {
                                         className="mt-1 block w-full"
                                         isFocused={true}
                                         onChange={(e) => setData('custom_id', e.target.value)}
+                                        placeholder="np. Agata Kowalska"
                                     />
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        💡 Jeśli to ID już istnieje, system automatycznie doda numer (np. "Agata_Kowalska_2")
+                                    </p>
                                     <InputError message={errors.custom_id} className="mt-2" />
+                                </div>
+
+                                <div className="mb-4">
+                                    <InputLabel htmlFor="notes" value="Uwagi dodatkowe (opcjonalne)" />
+                                    <textarea
+                                        id="notes"
+                                        name="notes"
+                                        value={data.notes}
+                                        maxLength={500}
+                                        rows={4}
+                                        className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                        placeholder="np. Jacuzzi VIP z przystawkami, preferencje klienta..."
+                                        onChange={(e) => setData('notes', e.target.value)}
+                                    />
+                                    <div className="flex justify-between items-center mt-1">
+                                        <p className="text-xs text-gray-500">
+                                            Dodatkowe informacje o pakiecie (max 500 znaków)
+                                        </p>
+                                        <span className="text-xs text-gray-500">
+                                            {data.notes.length} / 500
+                                        </span>
+                                    </div>
+                                    <InputError message={errors.notes} className="mt-2" />
                                 </div>
 
                                 <div className="flex items-center justify-end mt-4">

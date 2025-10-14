@@ -25,6 +25,7 @@ export interface Package {
     created_at: string;
     usage_percentage: number;
     is_fully_used: boolean;
+    notes: string | null;
 }
 
 export interface PackageWithUsages extends Package {

@@ -2,12 +2,44 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PageProps } from '@/types';
 import { Package } from '@/types/package';
 import { Head, Link } from '@inertiajs/react';
+import { useState, useMemo } from 'react';
 
 interface Props extends PageProps {
     packages: Package[];
 }
 
+type FilterType = 'wszystkie' | 'aktywne' | 'wykorzystane';
+
 export default function Index({ auth, packages }: Props) {
+    const [filter, setFilter] = useState<FilterType>('wszystkie');
+    const [searchQuery, setSearchQuery] = useState<string>('');
+
+    const filteredPackages = useMemo(() => {
+        // First filter by status (wszystkie/aktywne/wykorzystane)
+        let result = packages;
+        switch (filter) {
+            case 'wykorzystane':
+                result = packages.filter(pkg => pkg.usage_percentage === 100);
+                break;
+            case 'aktywne':
+                result = packages.filter(pkg => pkg.usage_percentage < 100);
+                break;
+            case 'wszystkie':
+            default:
+                result = packages;
+        }
+
+        // Then filter by search query (if provided)
+        if (searchQuery.trim() !== '') {
+            const query = searchQuery.toLowerCase().trim();
+            result = result.filter(pkg =>
+                pkg.custom_id.toLowerCase().includes(query)
+            );
+        }
+
+        return result;
+    }, [packages, filter, searchQuery]);
+
     return (
         <AuthenticatedLayout
             header={
@@ -34,9 +66,93 @@ export default function Index({ auth, packages }: Props) {
                                 </Link>
                             </div>
 
+                            {/* Filter Section */}
+                            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h4 className="text-sm font-medium text-gray-700">
+                                        Filtruj pakiety:
+                                    </h4>
+                                    <span className="text-sm text-gray-500">
+                                        Wyświetlane: {filteredPackages.length} / {packages.length}
+                                    </span>
+                                </div>
+
+                                {/* Search Input */}
+                                <div className="mb-4">
+                                    <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Wyszukaj po ID pakietu:
+                                    </label>
+                                    <input
+                                        id="search"
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        placeholder='np. "Agata", "Kowalski", "2025"...'
+                                        className="w-full md:w-96 px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                    />
+                                    {searchQuery && (
+                                        <button
+                                            onClick={() => setSearchQuery('')}
+                                            className="mt-2 text-sm text-gray-600 hover:text-gray-900 underline"
+                                        >
+                                            Wyczyść wyszukiwanie
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Status Filter Radio Buttons */}
+                                <div className="flex gap-6">
+                                    <label className="flex items-center cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="packageFilter"
+                                            value="wszystkie"
+                                            checked={filter === 'wszystkie'}
+                                            onChange={(e) => setFilter(e.target.value as FilterType)}
+                                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2"
+                                        />
+                                        <span className="ml-2 text-sm text-gray-700">
+                                            Wszystkie
+                                        </span>
+                                    </label>
+
+                                    <label className="flex items-center cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="packageFilter"
+                                            value="aktywne"
+                                            checked={filter === 'aktywne'}
+                                            onChange={(e) => setFilter(e.target.value as FilterType)}
+                                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2"
+                                        />
+                                        <span className="ml-2 text-sm text-gray-700">
+                                            Aktywne <span className="text-gray-500">({"<"}100%)</span>
+                                        </span>
+                                    </label>
+
+                                    <label className="flex items-center cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="packageFilter"
+                                            value="wykorzystane"
+                                            checked={filter === 'wykorzystane'}
+                                            onChange={(e) => setFilter(e.target.value as FilterType)}
+                                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2"
+                                        />
+                                        <span className="ml-2 text-sm text-gray-700">
+                                            Wykorzystane <span className="text-gray-500">(100%)</span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+
                             {packages.length === 0 ? (
                                 <div className="text-center py-8 text-gray-500">
                                     <p>Brak pakietów. Dodaj pierwszy pakiet klikając przycisk "Dodaj Pakiet".</p>
+                                </div>
+                            ) : filteredPackages.length === 0 ? (
+                                <div className="text-center py-8 text-gray-500">
+                                    <p>Brak pakietów spełniających wybrane kryteria filtrowania.</p>
                                 </div>
                             ) : (
                                 <div className="overflow-x-auto">
@@ -64,7 +180,7 @@ export default function Index({ auth, packages }: Props) {
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
-                                            {packages.map((pkg) => (
+                                            {filteredPackages.map((pkg) => (
                                                 <tr
                                                     key={pkg.id}
                                                     className={pkg.is_fully_used ? 'bg-gray-200' : 'hover:bg-gray-50'}
