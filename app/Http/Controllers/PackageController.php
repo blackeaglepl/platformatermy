@@ -120,8 +120,17 @@ class PackageController extends Controller
     {
         $package->load(['creator', 'usages.service', 'usages.marker']);
 
-        // Group usages by zone
-        $usagesByZone = $package->usages->groupBy(function ($usage) {
+        // Separate regular services and extra services
+        $regularUsages = $package->usages->filter(function ($usage) {
+            return !$usage->service->is_extra;
+        });
+
+        $extraUsages = $package->usages->filter(function ($usage) {
+            return $usage->service->is_extra;
+        });
+
+        // Group regular usages by zone
+        $usagesByZone = $regularUsages->groupBy(function ($usage) {
             return $usage->service->zone;
         });
 
@@ -145,6 +154,9 @@ class PackageController extends Controller
                         return $this->formatUsage($usage);
                     }),
                 ],
+                'extra_usages' => $extraUsages->map(function ($usage) {
+                    return $this->formatUsage($usage);
+                })->values(),
             ],
         ]);
     }

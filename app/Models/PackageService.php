@@ -14,5 +14,10 @@ class PackageService extends Model
         'zone',
         'description',
         'duration',
+        'is_extra',
+    ];
+
+    protected $casts = [
+        'is_extra' => 'boolean',
     ];
 }

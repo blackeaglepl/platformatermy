@@ -39,17 +39,29 @@ class Package extends Model
 
     public function getUsagePercentageAttribute()
     {
-        $totalServices = $this->usages()->count();
+        // Exclude extra services from percentage calculation
+        $totalServices = $this->usages()
+            ->whereHas('service', function ($query) {
+                $query->where('is_extra', false);
+            })
+            ->count();
+
         if ($totalServices === 0) {
             return 0;
         }
 
-        $usedServices = $this->usages()->whereNotNull('used_at')->count();
+        $usedServices = $this->usages()
+            ->whereHas('service', function ($query) {
+                $query->where('is_extra', false);
+            })
+            ->whereNotNull('used_at')
+            ->count();
+
         return round(($usedServices / $totalServices) * 100);
     }
 
     public function isFullyUsed()
     {
-        return $this->usage_percentage === 100;
+        return $this->usage_percentage >= 100;
     }
 }

@@ -79,7 +79,9 @@ export default function Index({ auth, packages }: Props) {
                                                         <div className="flex items-center">
                                                             <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
                                                                 <div
-                                                                    className="bg-blue-600 h-2.5 rounded-full"
+                                                                    className={`h-2.5 rounded-full transition-all duration-300 ${
+                                                                        pkg.is_fully_used ? 'bg-green-600' : 'bg-blue-600'
+                                                                    }`}
                                                                     style={{ width: `${pkg.usage_percentage}%` }}
                                                                 ></div>
                                                             </div>

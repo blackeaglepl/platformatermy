@@ -20,7 +20,8 @@
       "Bash(findstr :5173)",
       "Bash(findstr:*)",
       "Bash(docker exec:*)",
-      "Bash(docker:*)"
+      "Bash(docker:*)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []

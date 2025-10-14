@@ -210,6 +210,60 @@ export default function Show({ auth, package: pkg }: Props) {
                                         <p>Brak usług w tym pakiecie.</p>
                                     </div>
                                 )}
+
+                            {/* Extra Services Section */}
+                            {pkg.extra_usages && pkg.extra_usages.length > 0 && (
+                                <>
+                                    <div className="border-t-2 border-gray-300 my-8"></div>
+
+                                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                            <span className="mr-2">✨</span>
+                                            Usługi dodatkowe
+                                        </h3>
+                                        <div className="space-y-3">
+                                            {pkg.extra_usages.map((usage) => (
+                                                <div
+                                                    key={usage.id}
+                                                    className={`p-3 rounded-lg border ${
+                                                        usage.is_used
+                                                            ? 'bg-green-50 border-green-200'
+                                                            : 'bg-white border-gray-200'
+                                                    }`}
+                                                >
+                                                    <label className="flex items-start cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={usage.is_used}
+                                                            onChange={() => handleToggleUsage(usage)}
+                                                            className="mt-1 h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                                        />
+                                                        <div className="ml-3 flex-1">
+                                                            <div className="font-medium text-gray-900">
+                                                                {usage.service_name}
+                                                            </div>
+                                                            {usage.service_description && (
+                                                                <div className="text-sm text-gray-600 mt-1 italic">
+                                                                    {usage.service_description}
+                                                                </div>
+                                                            )}
+                                                            {usage.is_used && (
+                                                                <div className="text-xs text-green-600 mt-2">
+                                                                    ✓ Wykorzystano: {usage.used_at}
+                                                                    {usage.marked_by && ` przez ${usage.marked_by}`}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="mt-3 text-xs text-gray-500 italic text-center">
+                                            Usługi dodatkowe nie wpływają na procent wykorzystania pakietu
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

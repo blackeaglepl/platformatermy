@@ -33,6 +33,7 @@ export interface PackageWithUsages extends Package {
         odnowy: PackageServiceUsage[];
         smaku: PackageServiceUsage[];
     };
+    extra_usages: PackageServiceUsage[];
 }
 
 export interface PackageType {
