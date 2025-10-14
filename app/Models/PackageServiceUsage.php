@@ -19,6 +19,12 @@ class PackageServiceUsage extends Model
         'notes',
     ];
 
+    protected $casts = [
+        'used_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
     public function package()
     {
         return $this->belongsTo(Package::class);

@@ -11,10 +11,13 @@ export default defineConfig({
         react(),
     ],
     server: {
-        // Development server config (only used with 'npm run dev')
-        host: 'localhost', // Use localhost for Windows compatibility
+        // CRITICAL: Configuration for Laravel Sail
+        host: '0.0.0.0', // Listen on all interfaces for Docker
         port: 5173,
         strictPort: true,
+        hmr: {
+            host: 'localhost', // HMR host for browser connection (Windows + Sail)
+        },
         watch: {
             usePolling: true, // Better file watching on Windows
         },

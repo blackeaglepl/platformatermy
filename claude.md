@@ -3,10 +3,11 @@
 ## 📋 Spis treści
 1. [Przegląd projektu](#przegląd-projektu)
 2. [Stack technologiczny](#stack-technologiczny)
-3. [Aktualna architektura](#aktualna-architektura)
-4. [Obecne funkcjonalności](#obecne-funkcjonalności)
-5. [API i komunikacja ze stroną Astro](#api-i-komunikacja-ze-stroną-astro)
-6. [Nowe funkcjonalności - System zarządzania pakietami](#nowe-funkcjonalności---system-zarządzania-pakietami)
+3. [⚠️ WAŻNE - Konfiguracja dla Windows + Docker](#-ważne---konfiguracja-dla-windows--docker)
+4. [Aktualna architektura](#aktualna-architektura)
+5. [Obecne funkcjonalności](#obecne-funkcjonalności)
+6. [API i komunikacja ze stroną Astro](#api-i-komunikacja-ze-stroną-astro)
+7. [Nowe funkcjonalności - System zarządzania pakietami](#nowe-funkcjonalności---system-zarządzania-pakietami)
 
 ---
 
@@ -51,6 +52,77 @@ Panel administracyjny do zarządzania komunikatami i informacją o ruchu dla str
 - **Środowisko:** Docker Desktop
 - **Orchestracja:** docker-compose
 - **Node.js:** v22.x (dla Vite i build procesu)
+
+---
+
+## ⚠️ WAŻNE - Konfiguracja dla Windows + Docker
+
+### Problem Windows ↔ Linux Compatibility
+Projekt jest rozwijany na **Windows**, ale uruchamiany w **Linux Docker containers**. To tworzy specyficzne wyzwania.
+
+### Rozwiązanie #1: Named Volume dla node_modules
+**Problem:** Binarne pakiety npm (rollup, esbuild) są kompilowane dla różnych systemów operacyjnych.
+
+**Rozwiązanie:** W `docker-compose.yml` używamy **named volume** dla `node_modules`:
+```yaml
+volumes:
+    - '.:/var/www/html'
+    - 'sail-node-modules:/var/www/html/node_modules'  # KRYTYCZNE!
+```
+
+**Efekt:**
+- Kod źródłowy jest synchronizowany z Windows
+- `node_modules` żyje TYLKO w kontenerze Linux
+- Brak konfliktów binarnych
+
+### Rozwiązanie #2: Vite Configuration
+**Problem:** Vite musi działać w kontenerze, ale być dostępny z przeglądarki Windows.
+
+**Rozwiązanie:** W `vite.config.js`:
+```javascript
+server: {
+    host: '0.0.0.0',           // Listen na wszystkich interfejsach (Docker)
+    port: 5173,
+    strictPort: true,
+    hmr: {
+        host: 'localhost',      // HMR dla przeglądarki Windows
+    },
+    watch: {
+        usePolling: true,       // Lepsze wykrywanie zmian z Windows
+    },
+}
+```
+
+### Rozwiązanie #3: Vite MUSI być uruchomiony W kontenerze
+❌ **NIE DZIAŁA:**
+```bash
+npm run dev  # Uruchomione bezpośrednio na Windows
+```
+
+✅ **DZIAŁA:**
+```bash
+docker exec platformapakiety-laravel.test-1 npm run dev  # W kontenerze
+```
+
+### Rozwiązanie #4: Używaj `docker compose` zamiast `sail`
+**Problem:** Laravel Sail nie działa w Git Bash (tylko w PowerShell/CMD/WSL2)
+
+**Rozwiązanie:** `start.bat` używa bezpośrednio `docker compose`:
+```batch
+docker compose up -d                                          # Zamiast: vendor\bin\sail up -d
+docker exec platformapakiety-laravel.test-1 npm install      # Zamiast: sail npm install
+docker exec platformapakiety-laravel.test-1 npm run dev      # Zamiast: sail npm run dev
+```
+
+### Quick Reference: Co gdzie?
+| Element | Lokalizacja | System |
+|---------|-------------|--------|
+| Kod źródłowy (.tsx, .php) | `F:\Windsurf\PlatformaPakiety\` | Windows (sync do kontenera) |
+| node_modules | Docker volume `sail-node-modules` | Linux (TYLKO w kontenerze) |
+| database.sqlite | `F:\Windsurf\PlatformaPakiety\database\` | Windows (sync do kontenera) |
+| vendor/ (Composer) | `F:\Windsurf\PlatformaPakiety\vendor\` | Windows (sync do kontenera) |
+| Vite dev server | Działa w kontenerze | Linux (port 5173 zmapowany) |
+| Laravel | Działa w kontenerze | Linux (port 80 zmapowany) |
 
 ---
 

@@ -2,21 +2,54 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PageProps } from '@/types';
 import { PackageWithUsages, PackageServiceUsage } from '@/types/package';
 import { Head, Link, router } from '@inertiajs/react';
-import { FormEventHandler } from 'react';
+import { useState } from 'react';
 
 interface Props extends PageProps {
     package: PackageWithUsages;
 }
 
 export default function Show({ auth, package: pkg }: Props) {
-    const handleToggleUsage = (usageId: number) => {
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [pendingUsageId, setPendingUsageId] = useState<number | null>(null);
+    const [pendingServiceName, setPendingServiceName] = useState<string>('');
+
+    const handleToggleUsage = (usage: PackageServiceUsage) => {
+        // Jeśli usługa jest już wykorzystana, pytamy o potwierdzenie
+        if (usage.is_used) {
+            setPendingUsageId(usage.id);
+            setPendingServiceName(usage.service_name);
+            setShowConfirmModal(true);
+        } else {
+            // Jeśli usługa nie jest wykorzystana, zaznaczamy bez pytania
+            performToggle(usage.id);
+        }
+    };
+
+    const performToggle = (usageId: number) => {
         router.post(
             route('package-usage.toggle', usageId),
             {},
             {
                 preserveScroll: true,
+                onSuccess: () => {
+                    setShowConfirmModal(false);
+                    setPendingUsageId(null);
+                    setPendingServiceName('');
+                }
             }
         );
+    };
+
+    const handleConfirmUnmark = () => {
+        if (pendingUsageId) {
+            performToggle(pendingUsageId);
+        }
+    };
+
+    const handleCancelUnmark = () => {
+        setShowConfirmModal(false);
+        setPendingUsageId(null);
+        setPendingServiceName('');
     };
 
     const renderServiceList = (services: PackageServiceUsage[], title: string, icon: string) => {
@@ -44,7 +77,7 @@ export default function Show({ auth, package: pkg }: Props) {
                                 <input
                                     type="checkbox"
                                     checked={usage.is_used}
-                                    onChange={() => handleToggleUsage(usage.id)}
+                                    onChange={() => handleToggleUsage(usage)}
                                     className="mt-1 h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                                 />
                                 <div className="ml-3 flex-1">
@@ -96,12 +129,13 @@ export default function Show({ auth, package: pkg }: Props) {
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    {/* Package Info Card */}
-                    <div className={`overflow-hidden shadow-sm sm:rounded-lg mb-6 ${
+                    {/* Single Unified Card */}
+                    <div className={`overflow-hidden shadow-sm sm:rounded-lg ${
                         pkg.is_fully_used ? 'bg-gray-300' : 'bg-white'
                     }`}>
                         <div className="p-6">
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            {/* Package Header Info */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                                 <div>
                                     <div className="text-sm font-medium text-gray-500">ID Pakietu</div>
                                     <div className="text-lg font-semibold text-gray-900">{pkg.custom_id}</div>
@@ -121,7 +155,7 @@ export default function Show({ auth, package: pkg }: Props) {
                             </div>
 
                             {/* Progress Bar */}
-                            <div className="mt-6">
+                            <div className="mb-8">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-sm font-medium text-gray-700">
                                         Wykorzystanie pakietu
@@ -132,7 +166,7 @@ export default function Show({ auth, package: pkg }: Props) {
                                 </div>
                                 <div className="w-full bg-gray-200 rounded-full h-4">
                                     <div
-                                        className={`h-4 rounded-full ${
+                                        className={`h-4 rounded-full transition-all duration-300 ${
                                             pkg.is_fully_used ? 'bg-green-600' : 'bg-blue-600'
                                         }`}
                                         style={{ width: `${pkg.usage_percentage}%` }}
@@ -144,12 +178,11 @@ export default function Show({ auth, package: pkg }: Props) {
                                     </div>
                                 )}
                             </div>
-                        </div>
-                    </div>
 
-                    {/* Services in 3 Columns */}
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6">
+                            {/* Divider */}
+                            <div className="border-t border-gray-200 my-6"></div>
+
+                            {/* Services Section */}
                             <h2 className="text-2xl font-bold text-gray-900 mb-6">Usługi w pakiecie</h2>
 
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -181,6 +214,44 @@ export default function Show({ auth, package: pkg }: Props) {
                     </div>
                 </div>
             </div>
+
+            {/* Confirmation Modal */}
+            {showConfirmModal && (
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+                    <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+                        <div className="p-6">
+                            <div className="flex items-center justify-center w-12 h-12 mx-auto bg-yellow-100 rounded-full mb-4">
+                                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+                                Czy na pewno chcesz cofnąć wykorzystanie usługi?
+                            </h3>
+                            <p className="text-sm text-gray-600 text-center mb-6">
+                                Usługa: <span className="font-semibold">{pendingServiceName}</span>
+                            </p>
+                            <p className="text-xs text-gray-500 text-center mb-6">
+                                Po potwierdzeniu, usługa będzie ponownie dostępna do wykorzystania.
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={handleCancelUnmark}
+                                    className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors"
+                                >
+                                    Anuluj
+                                </button>
+                                <button
+                                    onClick={handleConfirmUnmark}
+                                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
+                                >
+                                    Tak, cofnij
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AuthenticatedLayout>
     );
 }

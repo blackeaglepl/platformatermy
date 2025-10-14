@@ -1,6 +1,6 @@
-# Platforma Pakiety - TermyGórce Admin Panel
+# Platforma Pakiety - TermyGorce Admin Panel
 
-Panel administracyjny do zarządzania komunikatami, informacją o ruchu oraz pakietami usług dla strony TermyGórce.
+Panel administracyjny do zarządzania komunikatami, informacją o ruchu oraz pakietami usług dla strony TermyGorce.
 
 ## 🚀 Szybki start
 
@@ -128,7 +128,8 @@ PlatformaPakiety/
 
 ## 📝 Dokumentacja
 
-- **[claude.md](claude.md)** - Pełna dokumentacja projektu
+- **[SETUP.md](SETUP.md)** - 🚀 **INSTRUKCJA URUCHAMIANIA** (START TUTAJ!)
+- **[CLAUDE.md](CLAUDE.md)** - Pełna dokumentacja projektu
 - **[task.md](task.md)** - Zarządzanie zadaniami i progress tracking
 
 ---
@@ -177,48 +178,6 @@ vendor\bin\sail pint
 
 ---
 
-## 🚀 Production Build
-
-### Deployment (Docker)
-
-Gdy projekt jest gotowy do wdrożenia na produkcję:
-
-```bash
-# 1. Zbuduj production assets (Vite)
-npm run build
-
-# 2. W środowisku produkcyjnym - użyj docker-compose.yml
-# Vite dev server NIE jest potrzebny - używamy zbudowanych plików z /public/build
-```
-
-### Różnica Development vs Production
-
-| Środowisko | Vite | Laravel | Opis |
-|------------|------|---------|------|
-| **Development** | `npm run dev` (port 5173) | Sail (port 80) | Hot reload, debugging |
-| **Production** | **Nie działa** | Docker/Nginx | Używa plików z `public/build/` |
-
-**Kluczowe:**
-- **Development:** `vite.config.js` → `server: { host: 'localhost' }` - działa TYLKO lokalnie
-- **Production:** `npm run build` → generuje statyczne pliki w `public/build/`
-- Laravel automatycznie wykrywa czy Vite dev server działa i używa odpowiednich źródeł
-
-### Environment Variables
-
-```bash
-# .env (development)
-APP_ENV=local
-APP_DEBUG=true
-APP_URL=http://localhost
-
-# .env.production (production)
-APP_ENV=production
-APP_DEBUG=false
-APP_URL=https://admin.termygorce.pl
-```
-
----
-
 ## 🔒 Bezpieczeństwo
 
 ### ⚠️ NIE ZMIENIAĆ
@@ -230,28 +189,18 @@ APP_URL=https://admin.termygorce.pl
 
 ## 🐛 Troubleshooting
 
-### "Docker Desktop is not running"
-- Uruchom Docker Desktop i poczekaj aż się zainicjalizuje
+**Zobacz szczegółowe rozwiązania w [SETUP.md](SETUP.md#-rozwiązywanie-problemów)**
 
-### "Port 80 already in use"
-- Zatrzymaj inne serwery używające portu 80
-- Lub zmień port w `docker-compose.yml`
+### Najczęstsze problemy:
+- ❌ "ERR_CONNECTION_REFUSED" → Docker nie działa lub Vite nie uruchomiony
+- ❌ "Port 5173 already in use" → Zabij proces na porcie 5173
+- ❌ "Docker Desktop is not running" → Uruchom Docker Desktop
+- ❌ Błędy node_modules → Uruchom `docker exec platformapakiety-laravel.test-1 npm install`
 
-### "npm run dev" nie działa
-- Sprawdź czy `node_modules` istnieją: `ls node_modules`
-- Jeśli nie, uruchom: `npm install`
-
-### Kontenery nie startują
+**Uniwersalne rozwiązanie:**
 ```bash
-# Sprawdź status
-vendor\bin\sail ps
-
-# Sprawdź logi
-vendor\bin\sail logs
-
-# Restart kontenerów
-vendor\bin\sail down
-vendor\bin\sail up -d
+stop.bat
+start.bat
 ```
 
 ---

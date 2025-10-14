@@ -5,10 +5,12 @@ echo   TermyGorce - Stopping Project
 echo ===================================
 echo.
 
-echo [1/1] Stopping Laravel Sail containers...
-call vendor\bin\sail down
+echo [1/1] Stopping Docker containers...
+docker compose down
 
 echo.
-echo [DONE] All containers stopped!
+echo ===================================
+echo   Project stopped successfully!
+echo ===================================
 echo.
 pause
