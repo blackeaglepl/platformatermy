@@ -171,7 +171,7 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                                 </div>
                                 <div>
                                     <div className="text-sm font-medium text-gray-500">Typ pakietu</div>
-                                    <div className="text-lg font-semibold text-gray-900">Pakiet {pkg.package_type}</div>
+                                    <div className="text-lg font-semibold text-gray-900">{pkg.package_type_name || `Pakiet ${pkg.package_type}`}</div>
                                 </div>
                                 <div>
                                     <div className="text-sm font-medium text-gray-500">Utworzono przez</div>

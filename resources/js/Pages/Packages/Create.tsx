@@ -42,12 +42,12 @@ export default function Create({ auth }: PageProps) {
                                         className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                         onChange={(e) => setData('package_type', e.target.value)}
                                     >
-                                        <option value="1">Pakiet 1</option>
-                                        <option value="2">Pakiet 2</option>
-                                        <option value="3">Pakiet 3</option>
-                                        <option value="4">Pakiet 4</option>
-                                        <option value="5">Pakiet 5</option>
-                                        <option value="6">Pakiet 6</option>
+                                        <option value="1">Naturalna Harmonia</option>
+                                        <option value="2">Termalna Ulga</option>
+                                        <option value="3">Szept Miłości</option>
+                                        <option value="4">Kobiecy Chill</option>
+                                        <option value="5">Wspólna Regeneracja</option>
+                                        <option value="6">Impreza Urodzinowa</option>
                                     </select>
                                     <InputError message={errors.package_type} className="mt-2" />
                                 </div>

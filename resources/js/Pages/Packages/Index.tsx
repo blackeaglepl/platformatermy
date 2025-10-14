@@ -189,7 +189,7 @@ export default function Index({ auth, packages }: Props) {
                                                         {pkg.custom_id}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        Pakiet {pkg.package_type}
+                                                        {pkg.package_type_name || `Pakiet ${pkg.package_type}`}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         <div className="flex items-center">

@@ -13,6 +13,23 @@ use Inertia\Inertia;
 class PackageController extends Controller
 {
     /**
+     * Get package type name by type number.
+     */
+    private function getPackageTypeName(int $type): string
+    {
+        $packageNames = [
+            1 => 'Naturalna Harmonia',
+            2 => 'Termalna Ulga',
+            3 => 'Szept Miłości',
+            4 => 'Kobiecy Chill',
+            5 => 'Wspólna Regeneracja',
+            6 => 'Impreza Urodzinowa',
+        ];
+
+        return $packageNames[$type] ?? "Pakiet {$type}";
+    }
+
+    /**
      * Display a listing of packages.
      */
     public function index()
@@ -25,6 +42,7 @@ class PackageController extends Controller
                     'id' => $package->id,
                     'custom_id' => $package->custom_id,
                     'package_type' => $package->package_type,
+                    'package_type_name' => $this->getPackageTypeName($package->package_type),
                     'created_by' => $package->creator->name,
                     'created_at' => $package->created_at->format('Y-m-d H:i'),
                     'usage_percentage' => $package->usage_percentage,
@@ -54,7 +72,7 @@ class PackageController extends Controller
 
             $packageTypes[$i] = [
                 'type' => $i,
-                'name' => "Pakiet {$i}",
+                'name' => $this->getPackageTypeName($i),
                 'services_by_zone' => $services,
             ];
         }
@@ -157,6 +175,7 @@ class PackageController extends Controller
                 'id' => $package->id,
                 'custom_id' => $package->custom_id,
                 'package_type' => $package->package_type,
+                'package_type_name' => $this->getPackageTypeName($package->package_type),
                 'created_by' => $package->creator->name,
                 'created_at' => $package->created_at->format('Y-m-d H:i'),
                 'usage_percentage' => $package->usage_percentage,

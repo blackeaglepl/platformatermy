@@ -16,14 +16,14 @@ class PackageTypeSeeder extends Seeder
         // service_id odpowiada kolejności z PackageServiceSeeder (1-12)
 
         $packageTypes = [
-            // Pakiet 1 - Podstawowy Relaks
+            // Pakiet 1 - Naturalna Harmonia
             1 => [
                 ['service_id' => 1, 'quantity' => 1], // Basen termalny
                 ['service_id' => 2, 'quantity' => 1], // Jacuzzi
                 ['service_id' => 10, 'quantity' => 1], // Napoje ziołowe
             ],
 
-            // Pakiet 2 - Odnowa Express
+            // Pakiet 2 - Termalna Ulga
             2 => [
                 ['service_id' => 1, 'quantity' => 1], // Basen termalny
                 ['service_id' => 5, 'quantity' => 1], // Sauna fińska
@@ -31,7 +31,7 @@ class PackageTypeSeeder extends Seeder
                 ['service_id' => 11, 'quantity' => 1], // Śniadanie górskie
             ],
 
-            // Pakiet 3 - Komfort & Smak
+            // Pakiet 3 - Szept Miłości
             3 => [
                 ['service_id' => 1, 'quantity' => 1], // Basen termalny
                 ['service_id' => 4, 'quantity' => 1], // Masaż relaksacyjny
@@ -40,7 +40,7 @@ class PackageTypeSeeder extends Seeder
                 ['service_id' => 10, 'quantity' => 1], // Napoje ziołowe
             ],
 
-            // Pakiet 4 - Premium Wellness
+            // Pakiet 4 - Kobiecy Chill
             4 => [
                 ['service_id' => 1, 'quantity' => 1], // Basen termalny
                 ['service_id' => 2, 'quantity' => 1], // Jacuzzi
@@ -52,7 +52,7 @@ class PackageTypeSeeder extends Seeder
                 ['service_id' => 12, 'quantity' => 1], // Deser termalny
             ],
 
-            // Pakiet 5 - Spa Exclusive
+            // Pakiet 5 - Wspólna Regeneracja
             5 => [
                 ['service_id' => 1, 'quantity' => 1], // Basen termalny
                 ['service_id' => 2, 'quantity' => 2], // Jacuzzi x2
@@ -64,7 +64,7 @@ class PackageTypeSeeder extends Seeder
                 ['service_id' => 11, 'quantity' => 1], // Śniadanie górskie
             ],
 
-            // Pakiet 6 - Total Relax VIP
+            // Pakiet 6 - Impreza Urodzinowa
             6 => [
                 ['service_id' => 1, 'quantity' => 2], // Basen termalny x2
                 ['service_id' => 2, 'quantity' => 2], // Jacuzzi x2

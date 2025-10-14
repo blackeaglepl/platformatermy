@@ -21,6 +21,7 @@ export interface Package {
     id: number;
     custom_id: string;
     package_type: number;
+    package_type_name?: string;
     created_by: string;
     created_at: string;
     usage_percentage: number;
