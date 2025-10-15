@@ -32,15 +32,39 @@ class PackageController extends Controller
     /**
      * Display a listing of packages.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $packages = Package::with(['creator', 'usages.service'])
-            ->latest()
-            ->get()
-            ->map(function ($package) {
+        $query = Package::with(['creator', 'usages.service'])
+            ->latest();
+
+        // Server-side search filter
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('package_id', 'like', "%{$search}%")
+                  ->orWhere('owner_name', 'like', "%{$search}%");
+            });
+        }
+
+        // Server-side status filter using scopes
+        if ($status = $request->input('status')) {
+            switch ($status) {
+                case 'wykorzystane':
+                    $query->fullyUsed();
+                    break;
+                    
+                case 'aktywne':
+                    $query->active();
+                    break;
+            }
+        }
+
+        // Paginate with 25 items per page
+        $packages = $query->paginate(25)
+            ->through(function ($package) {
                 return [
                     'id' => $package->id,
-                    'custom_id' => $package->custom_id,
+                    'package_id' => $package->package_id,
+                    'owner_name' => $package->owner_name,
                     'package_type' => $package->package_type,
                     'package_type_name' => $this->getPackageTypeName($package->package_type),
                     'created_by' => $package->creator->name,
@@ -52,6 +76,7 @@ class PackageController extends Controller
 
         return Inertia::render('Packages/Index', [
             'packages' => $packages,
+            'filters' => $request->only(['search', 'status']),
         ]);
     }
 
@@ -88,7 +113,7 @@ class PackageController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'custom_id' => 'required|string|max:255',
+            'owner_name' => 'required|string|max:255',
             'package_type' => 'required|integer|min:1|max:6',
             'notes' => 'nullable|string|max:500',
         ]);
@@ -96,19 +121,9 @@ class PackageController extends Controller
         DB::beginTransaction();
 
         try {
-            // Generate unique custom_id (auto-increment if duplicate)
-            $baseCustomId = $validated['custom_id'];
-            $finalCustomId = $baseCustomId;
-            $counter = 2;
-
-            while (Package::where('custom_id', $finalCustomId)->exists()) {
-                $finalCustomId = $baseCustomId . '_' . $counter;
-                $counter++;
-            }
-
-            // Create package
+            // Create package (package_id is auto-generated in model boot method)
             $package = Package::create([
-                'custom_id' => $finalCustomId,
+                'owner_name' => $validated['owner_name'],
                 'package_type' => $validated['package_type'],
                 'created_by' => Auth::id(),
                 'notes' => $validated['notes'] ?? null,
@@ -134,14 +149,8 @@ class PackageController extends Controller
 
             DB::commit();
 
-            // Prepare success message
-            $message = 'Pakiet został utworzony pomyślnie!';
-            if ($finalCustomId !== $baseCustomId) {
-                $message .= " ID zostało zmienione na: {$finalCustomId}";
-            }
-
             return redirect()->route('packages.show', $package->id)
-                ->with('success', $message);
+                ->with('success', "Pakiet {$package->package_id} został utworzony pomyślnie!");
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -173,7 +182,8 @@ class PackageController extends Controller
         return Inertia::render('Packages/Show', [
             'package' => [
                 'id' => $package->id,
-                'custom_id' => $package->custom_id,
+                'package_id' => $package->package_id,           // Auto-generated ID
+                'owner_name' => $package->owner_name,          // Owner/recipient name
                 'package_type' => $package->package_type,
                 'package_type_name' => $this->getPackageTypeName($package->package_type),
                 'created_by' => $package->creator->name,
@@ -197,6 +207,22 @@ class PackageController extends Controller
                 })->values(),
             ],
         ]);
+    }
+
+    /**
+     * Update package owner name.
+     */
+    public function updateOwner(Request $request, Package $package)
+    {
+        $validated = $request->validate([
+            'owner_name' => 'required|string|max:255',
+        ]);
+
+        $package->update([
+            'owner_name' => $validated['owner_name'],
+        ]);
+
+        return back()->with('success', 'Posiadacz pakietu został zaktualizowany!');
     }
 
     /**

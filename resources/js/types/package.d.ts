@@ -19,7 +19,8 @@ export interface PackageServiceUsage {
 
 export interface Package {
     id: number;
-    custom_id: string;
+    package_id: string;          // Auto-generated ID (format: YYYYMMDD-XX)
+    owner_name: string;          // Package owner/recipient name (editable)
     package_type: number;
     package_type_name?: string;
     created_by: string;

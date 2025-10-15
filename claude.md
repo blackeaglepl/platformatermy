@@ -47,6 +47,7 @@ Panel administracyjny do zarządzania komunikatami i informacją o ruchu dla str
 - **Testing:** Pest PHP 3.6
 - **Code quality:** Laravel Pint 1.13
 - **Linting:** ESLint (TypeScript)
+- **MCP Integration:** Laravel MCP 0.1.1 (Model Context Protocol)
 
 ### Deployment
 - **Środowisko:** Docker Desktop
@@ -494,6 +495,76 @@ resources/js/Pages/
 
 ---
 
+## 🤖 Laravel MCP Integration
+
+### ⚠️ WYSOKI PRIORYTET - MCP Setup
+
+**Status:** ✅ Skonfigurowany i gotowy do użycia
+
+**Laravel MCP** umożliwia bezpośrednią interakcję z aplikacją Laravel przez Model Context Protocol, co znacznie przyspiesza development.
+
+### Konfiguracja MCP
+
+#### Zainstalowane komponenty:
+- **Pakiet:** `laravel/mcp ^0.1.1`
+- **Serwer MCP:** `PlatformaPakietyServer` w `app/Mcp/Servers/`
+- **Narzędzia:** `GetAlertsTool` (pobieranie alertów z bazy)
+- **Routing:** Zarejestrowany w `routes/ai.php` jako handle `pakiety`
+
+#### Claude Code Integration:
+```bash
+# Automatycznie skonfigurowane w Claude Code
+claude mcp add pakiety stdio -- docker exec platformapakiety-laravel.test-1 php artisan mcp:start pakiety
+```
+
+### Dostępne narzędzia MCP
+
+#### 1. GetAlertsTool
+- **Opis:** Pobiera wszystkie alerty z bazy danych
+- **Parametry:** Brak (automatycznie pobiera wszystkie)
+- **Response:** JSON z alertami (id, enabled, text, type, order, timestamps)
+- **Użycie:** Szybkie sprawdzenie stanu alertów bez przeglądarki
+
+### Korzyści dla development
+
+#### Natychmiastowe korzyści:
+- ✅ **Szybkie testowanie modeli** - Alert, Traffic, Package bez UI
+- ✅ **API debugging** - testowanie `/api/traffic` i `/api/alerts`
+- ✅ **Baza danych** - bezpośrednie zapytania do SQLite
+- ✅ **Eloquent testing** - weryfikacja relacji między modelami
+
+#### Dla systemu pakietów:
+- ✅ **Package management** - testowanie logiki pakietów
+- ✅ **Service usage** - debugowanie wykorzystania usług
+- ✅ **Validation testing** - sprawdzanie walidacji formularzy
+
+### Rozszerzenia MCP (planned)
+
+#### Dodatkowe narzędzia do utworzenia:
+```php
+// Przyszłe narzędzia MCP
+GetPackagesTool::class,      // Lista pakietów z % wykorzystania
+GetTrafficTool::class,       // Aktualny traffic
+CreatePackageTool::class,    // Tworzenie pakietu przez MCP
+ToggleServiceTool::class,    // Zaznaczanie usług jako wykorzystane
+```
+
+#### Resources (opcjonalne):
+```php
+// Zasoby dokumentacyjne przez MCP
+PackageTypesResource::class, // Dokumentacja typów pakietów
+APIDocsResource::class,      // Dokumentacja API endpoints
+```
+
+### ⚠️ WAŻNE - Restart Claude Code
+
+Po każdej zmianie w MCP konfiguracji:
+1. Restart Claude Code aby załadować nowe MCP tools
+2. MCP server działa automatycznie w kontenerze Docker
+3. Brak potrzeby manualnego uruchamiania
+
+---
+
 ## 📝 Sposób pracy z projektem
 
 ### Workflow z Claude Code
@@ -560,4 +631,4 @@ Szczegółowe zarządzanie zadaniami i postępami znajduje się w **[task.md](ta
 ---
 
 **Ostatnia aktualizacja:** 2025-10-13
-**Autor:** Zespół deweloperski TermyGórce
+**Autor:** Zespół deweloperski TermyGorce Kamil + Michał (jeśli to czytasz to pozdrawiam)

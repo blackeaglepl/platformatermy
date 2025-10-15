@@ -9,7 +9,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 export default function Create({ auth }: PageProps) {
     const { data, setData, post, processing, errors } = useForm({
         package_type: '1',
-        custom_id: '',
+        owner_name: '',
         notes: '',
     });
 
@@ -53,21 +53,21 @@ export default function Create({ auth }: PageProps) {
                                 </div>
 
                                 <div className="mb-4">
-                                    <InputLabel htmlFor="custom_id" value="ID Pakietu" />
+                                    <InputLabel htmlFor="owner_name" value="Posiadacz Pakietu" />
                                     <TextInput
-                                        id="custom_id"
+                                        id="owner_name"
                                         type="text"
-                                        name="custom_id"
-                                        value={data.custom_id}
+                                        name="owner_name"
+                                        value={data.owner_name}
                                         className="mt-1 block w-full"
                                         isFocused={true}
-                                        onChange={(e) => setData('custom_id', e.target.value)}
-                                        placeholder="np. Agata Kowalska"
+                                        onChange={(e) => setData('owner_name', e.target.value)}
+                                        placeholder="np. Jan Kowalski"
                                     />
                                     <p className="mt-1 text-xs text-gray-500">
-                                        💡 Jeśli to ID już istnieje, system automatycznie doda numer (np. "Agata_Kowalska_2")
+                                        💡 ID pakietu zostanie wygenerowane automatycznie (format: YYYYMMDD-XX)
                                     </p>
-                                    <InputError message={errors.custom_id} className="mt-2" />
+                                    <InputError message={errors.owner_name} className="mt-2" />
                                 </div>
 
                                 <div className="mb-4">

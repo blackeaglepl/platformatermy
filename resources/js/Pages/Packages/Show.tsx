@@ -16,9 +16,14 @@ export default function Show({ auth, package: pkg, flash }: Props) {
     const [pendingUsageId, setPendingUsageId] = useState<number | null>(null);
     const [pendingServiceName, setPendingServiceName] = useState<string>('');
     const [isEditingNotes, setIsEditingNotes] = useState(false);
+    const [isEditingOwner, setIsEditingOwner] = useState(false);
 
     const { data: notesData, setData: setNotesData, patch: patchNotes, processing: processingNotes } = useForm({
         notes: pkg.notes || '',
+    });
+
+    const { data: ownerData, setData: setOwnerData, patch: patchOwner, processing: processingOwner } = useForm({
+        owner_name: pkg.owner_name || '',
     });
 
     const handleToggleUsage = (usage: PackageServiceUsage) => {
@@ -72,6 +77,20 @@ export default function Show({ auth, package: pkg, flash }: Props) {
     const handleCancelEditNotes = () => {
         setNotesData('notes', pkg.notes || '');
         setIsEditingNotes(false);
+    };
+
+    const handleSaveOwner = () => {
+        patchOwner(route('packages.update-owner', pkg.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsEditingOwner(false);
+            }
+        });
+    };
+
+    const handleCancelEditOwner = () => {
+        setOwnerData('owner_name', pkg.owner_name || '');
+        setIsEditingOwner(false);
     };
 
     const renderServiceList = (services: PackageServiceUsage[], title: string, icon: string) => {
@@ -136,7 +155,7 @@ export default function Show({ auth, package: pkg, flash }: Props) {
             header={
                 <div className="flex items-center justify-between">
                     <h2 className="font-semibold text-xl text-gray-800 leading-tight">
-                        Pakiet: {pkg.custom_id}
+                        Pakiet: {pkg.package_id}
                     </h2>
                     <Link
                         href={route('packages.index')}
@@ -147,7 +166,7 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                 </div>
             }
         >
-            <Head title={`Pakiet ${pkg.custom_id}`} />
+            <Head title={`Pakiet ${pkg.package_id}`} />
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -164,10 +183,51 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                     }`}>
                         <div className="p-6">
                             {/* Package Header Info */}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
                                 <div>
                                     <div className="text-sm font-medium text-gray-500">ID Pakietu</div>
-                                    <div className="text-lg font-semibold text-gray-900">{pkg.custom_id}</div>
+                                    <div className="text-lg font-mono font-semibold text-gray-900">{pkg.package_id}</div>
+                                </div>
+                                <div>
+                                    <div className="text-sm font-medium text-gray-500">Posiadacz</div>
+                                    {isEditingOwner ? (
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                value={ownerData.owner_name}
+                                                onChange={(e) => setOwnerData('owner_name', e.target.value)}
+                                                className="w-full px-2 py-1 text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md"
+                                                autoFocus
+                                            />
+                                            <button
+                                                onClick={handleSaveOwner}
+                                                disabled={processingOwner}
+                                                className="px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+                                                title="Zapisz"
+                                            >
+                                                ✓
+                                            </button>
+                                            <button
+                                                onClick={handleCancelEditOwner}
+                                                disabled={processingOwner}
+                                                className="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50"
+                                                title="Anuluj"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2">
+                                            <div className="text-lg font-semibold text-gray-900">{pkg.owner_name}</div>
+                                            <button
+                                                onClick={() => setIsEditingOwner(true)}
+                                                className="text-sm text-indigo-600 hover:text-indigo-900"
+                                                title="Edytuj posiadacza"
+                                            >
+                                                ✎
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                                 <div>
                                     <div className="text-sm font-medium text-gray-500">Typ pakietu</div>

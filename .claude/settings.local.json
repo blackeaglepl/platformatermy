@@ -21,7 +21,9 @@
       "Bash(findstr:*)",
       "Bash(docker exec:*)",
       "Bash(docker:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "mcp__serena__check_onboarding_performed",
+      "mcp__serena__write_memory"
     ],
     "deny": [],
     "ask": []
