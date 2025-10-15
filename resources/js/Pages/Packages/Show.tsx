@@ -157,12 +157,22 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                     <h2 className="font-semibold text-xl text-gray-800 leading-tight">
                         Pakiet: {pkg.package_id}
                     </h2>
-                    <Link
-                        href={route('packages.index')}
-                        className="text-sm text-gray-600 hover:text-gray-900"
-                    >
-                        ← Powrót do listy
-                    </Link>
+                    <div className="flex items-center gap-4">
+                        <a
+                            href={route('packages.pdf', pkg.id)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:border-indigo-900 focus:ring ring-indigo-300 disabled:opacity-25 transition ease-in-out duration-150"
+                        >
+                            📄 Pobierz PDF
+                        </a>
+                        <Link
+                            href={route('packages.index')}
+                            className="text-sm text-gray-600 hover:text-gray-900"
+                        >
+                            ← Powrót do listy
+                        </Link>
+                    </div>
                 </div>
             }
         >
@@ -411,6 +421,61 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                                         </div>
                                         <div className="mt-3 text-xs text-gray-500 italic text-center">
                                             Usługi dodatkowe nie wpływają na procent wykorzystania pakietu
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* History Section */}
+                            {pkg.logs && pkg.logs.length > 0 && (
+                                <>
+                                    <div className="border-t-2 border-gray-300 my-8"></div>
+
+                                    <div className="bg-gray-50 rounded-lg border-2 border-gray-300 overflow-hidden">
+                                        <div className="bg-gray-100 px-4 py-3 border-b border-gray-300">
+                                            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                                                <span className="mr-2">📜</span>
+                                                Historia edycji
+                                                <span className="ml-2 text-sm font-normal text-gray-500">
+                                                    (ostatnie 40 akcji)
+                                                </span>
+                                            </h3>
+                                        </div>
+
+                                        <div className="p-4">
+                                            <div className="space-y-2 max-h-96 overflow-y-auto">
+                                                {pkg.logs.map((log) => {
+                                                    // Determine if this is an "unmark" action (orange/red color)
+                                                    const isUnmarkAction = log.action.toLowerCase().includes('odznaczono');
+                                                    const dotColor = isUnmarkAction ? 'bg-orange-500' : 'bg-indigo-500';
+
+                                                    return (
+                                                        <div
+                                                            key={log.id}
+                                                            className="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+                                                        >
+                                                            <div className={`flex-shrink-0 w-2 h-2 mt-2 rounded-full ${dotColor}`}></div>
+
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-sm text-gray-900 font-medium">
+                                                                    {log.action}
+                                                                </p>
+                                                                <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                                                                    <span className="font-semibold">{log.user_name}</span>
+                                                                    <span>•</span>
+                                                                    <span>{log.created_at}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            {pkg.logs.length === 40 && (
+                                                <div className="mt-3 text-center text-xs text-gray-400 italic">
+                                                    Wyświetlono maksymalnie 40 ostatnich akcji
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </>

@@ -595,12 +595,279 @@ Szczegółowe zarządzanie zadaniami i postępami znajduje się w **[task.md](ta
 - ❌ Tabele `alerts` i `traffic` w bazie danych
 - ❌ Istniejące migracje w `database/migrations/`
 
-### Pytania do rozważenia
-- Czy pakiety mają datę ważności?
-- Czy można edytować ID pakietu po utworzeniu?
-- Czy usługi mogą być używane wielokrotnie? (np. 3x masaż w pakiecie)
-- Czy potrzebujemy historii zmian?
-- Czy potrzebujemy eksportu do PDF/Excel?
+### ⚠️ Ważne ustalenia dotyczące nazewnictwa pól
+**KRYTYCZNE:** W bazie danych pole zawierające imię i nazwisko posiadacza nazywa się **`custom_id`**, NIE `owner_name`!
+
+```
+packages table:
+- package_id (VARCHAR) - automatycznie generowane ID (YYYYMMDD-XX)
+- custom_id (VARCHAR)  - imię i nazwisko posiadacza (np. "Jan Kowalski")
+- package_type (INT)   - typ pakietu (1-6)
+```
+
+W kodzie backend zawsze używaj `custom_id` do pracy z nazwiskiem klienta!
+
+---
+
+## 📄 System generowania PDF pakietów
+
+**Status:** ✅ Zaimplementowany dla Pakietu 1 (Naturalna Harmonia)
+**Data implementacji:** 2025-10-15
+
+### Przegląd funkcjonalności
+
+System umożliwia automatyczne generowanie spersonalizowanych PDF dla pakietów usługowych. PDF zawiera:
+- **Stronę 1:** Graficzny wzór z dynamicznie wstawianymi danymi (ID, data, imię i nazwisko)
+- **Stronę 2:** Statyczną listę usług wchodzących w skład pakietu
+
+### Stack technologiczny PDF
+
+- **Biblioteka:** TCPDF 6.10 (`tecnickcom/tcpdf`)
+- **Format:** DL poziomy (210mm x 99mm)
+- **Czcionka:** DejaVu Sans (wbudowana w TCPDF, wspiera polskie znaki)
+- **Źródło tła:** Pliki JPG w `public/pdf-templates/`
+
+### Struktura plików
+
+```
+public/pdf-templates/
+├── pakiet-1-page1.jpg    # Strona 1 dla Pakietu 1 (Naturalna Harmonia)
+└── pakiet-1-page2.jpg    # Strona 2 dla Pakietu 1 (lista usług)
+
+app/Services/
+└── PackagePdfService.php # Serwis generowania PDF
+
+app/Http/Controllers/
+└── PackageController.php # Endpoint generatePdf()
+
+routes/
+└── web.php              # Route: GET /packages/{id}/pdf
+```
+
+### Jak działa generowanie PDF
+
+#### 1. Przycisk w UI (Show.tsx)
+```tsx
+<a
+    href={route('packages.pdf', pkg.id)}
+    target="_blank"
+    className="..."
+>
+    📄 Pobierz PDF
+</a>
+```
+
+#### 2. Endpoint w PackageController
+```php
+public function generatePdf(Package $package)
+{
+    $pdfService = new PackagePdfService();
+    return $pdfService->downloadPdf($package);
+}
+```
+
+#### 3. PackagePdfService - główna logika
+
+**Inicjalizacja:**
+```php
+$this->pdf = new TCPDF('L', 'mm', [99, 210], true, 'UTF-8', false);
+$this->pdf->setPrintHeader(false);
+$this->pdf->setPrintFooter(false);
+$this->pdf->SetMargins(0, 0, 0);
+$this->pdf->SetAutoPageBreak(false, 0);
+```
+
+**Strona 1 - nakładanie danych:**
+```php
+// Ustaw tło JPG
+$backgroundPath = public_path('pdf-templates/pakiet-1-page1.jpg');
+$this->pdf->Image($backgroundPath, 0, 0, 210, 99, 'JPG', '', '', false, 300);
+
+// Dodaj ID pakietu (fioletowe pole)
+$this->pdf->SetFont('dejavusans', '', 10);
+$this->pdf->SetXY(25, 52);
+$this->pdf->Cell(50, 5, $package->package_id, 0, 0, 'C', false);
+
+// Dodaj datę (niebieskie pole)
+$this->pdf->SetXY(25, 60);
+$dateText = $package->created_at->format('d.m.Y');
+$this->pdf->Cell(50, 5, $dateText, 0, 0, 'C', false);
+
+// Dodaj imię i nazwisko (różowe pole)
+$this->pdf->SetFont('dejavusans', 'B', 13);
+$this->pdf->SetXY(100, 56);
+$this->pdf->Cell(100, 6, mb_strtoupper($package->custom_id, 'UTF-8'), 0, 0, 'C', false);
+```
+
+**Strona 2 - statyczne tło:**
+```php
+$this->pdf->AddPage();
+$backgroundPath = public_path('pdf-templates/pakiet-1-page2.jpg');
+$this->pdf->Image($backgroundPath, 0, 0, 210, 99, 'JPG', '', '', false, 300);
+```
+
+### Pozycjonowanie tekstu na PDF
+
+**Układ współrzędnych TCPDF:**
+- **X** - odległość od lewej krawędzi (mm)
+- **Y** - odległość od górnej krawędzi (mm)
+- **0,0** = lewy górny róg
+
+**Aktualne pozycje dla Pakietu 1:**
+
+| Element | X (mm) | Y (mm) | Rozmiar | Wyrównanie | Lokalizacja na wzorze |
+|---------|--------|--------|---------|------------|----------------------|
+| ID pakietu | 25 | 52 | 10pt | Centered | Fioletowe pole |
+| Data utworzenia | 25 | 60 | 10pt | Centered | Niebieskie pole |
+| Imię i nazwisko | 100 | 56 | 13pt Bold | Centered | Różowe pole |
+
+**Jak dostosować pozycjonowanie:**
+
+Edytuj `app/Services/PackagePdfService.php`, metoda `createPage1()`:
+
+```php
+// ID - zwiększ X żeby przesunąć w prawo, zwiększ Y żeby przesunąć w dół
+$this->pdf->SetXY(25, 52);  // X=25mm, Y=52mm
+
+// DATA
+$this->pdf->SetXY(25, 60);  // X=25mm, Y=60mm
+
+// IMIĘ I NAZWISKO
+$this->pdf->SetXY(100, 56); // X=100mm, Y=56mm
+```
+
+### Dodawanie kolejnych pakietów (2-6)
+
+**Krok 1:** Dodaj wzory JPG do `public/pdf-templates/`:
+```
+pakiet-2-page1.jpg
+pakiet-2-page2.jpg
+pakiet-3-page1.jpg
+pakiet-3-page2.jpg
+... itd.
+```
+
+**Krok 2:** Rozszerz `PackagePdfService.php`:
+
+```php
+public function generatePackagePdf(Package $package): string
+{
+    // Dynamicznie wybierz template na podstawie package_type
+    $this->createPage1($package);
+    $this->createPage2($package);
+
+    return $this->pdf->Output('', 'S');
+}
+
+protected function createPage1(Package $package): void
+{
+    $this->pdf->AddPage();
+
+    // Wybierz tło na podstawie typu pakietu
+    $templateNumber = $package->package_type;
+    $backgroundPath = public_path("pdf-templates/pakiet-{$templateNumber}-page1.jpg");
+
+    $this->pdf->Image($backgroundPath, 0, 0, 210, 99, 'JPG', '', '', false, 300);
+
+    // WAŻNE: Pozycje mogą się różnić dla każdego pakietu!
+    // Dodaj switch/if dla różnych typów:
+
+    switch ($package->package_type) {
+        case 1:
+            $this->addTextForPackage1($package);
+            break;
+        case 2:
+            $this->addTextForPackage2($package);
+            break;
+        // ... itd.
+    }
+}
+
+private function addTextForPackage1(Package $package)
+{
+    // Pozycje dla Pakietu 1 (jak jest teraz)
+    $this->pdf->SetXY(25, 52);
+    $this->pdf->Cell(50, 5, $package->package_id, 0, 0, 'C');
+    // ... itd.
+}
+
+private function addTextForPackage2(Package $package)
+{
+    // Pozycje dla Pakietu 2 (do ustalenia)
+    $this->pdf->SetXY(30, 55);  // Inne pozycje!
+    $this->pdf->Cell(50, 5, $package->package_id, 0, 0, 'C');
+    // ... itd.
+}
+```
+
+**Krok 3:** Dla każdego nowego pakietu:
+1. Otrzymaj wzory graficzne (JPG) dla strony 1 i 2
+2. Stwórz zdjęcie wzoru z zaznaczonymi polami (jak dla Pakietu 1)
+3. Określ dokładne współrzędne XY dla każdego pola
+4. Dodaj metodę `addTextForPackageX()`
+5. Przetestuj generowanie PDF
+
+### Testowanie PDF lokalnie
+
+**Metoda 1: Przez przeglądarkę**
+```
+1. Otwórz http://localhost/packages
+2. Wybierz pakiet
+3. Kliknij "📄 Pobierz PDF"
+```
+
+**Metoda 2: Przez kod testowy**
+```php
+// test-pdf.php
+$package = Package::first();
+$pdfService = new PackagePdfService();
+$pdfContent = $pdfService->generatePackagePdf($package);
+file_put_contents('test.pdf', $pdfContent);
+```
+
+**Metoda 3: Przez Tinker**
+```bash
+docker exec platformapakiety-laravel.test-1 php artisan tinker
+
+$package = App\Models\Package::first();
+$service = new App\Services\PackagePdfService();
+$pdf = $service->generatePackagePdf($package);
+file_put_contents('test.pdf', $pdf);
+```
+
+### Możliwe rozszerzenia
+
+1. **Kod QR na PDF** - dodaj pakiet `bacon/bacon-qr-code`
+2. **Watermark** - dodaj logo TermyGórce jako watermark
+3. **Dynamiczna lista usług** - renderuj usługi z bazy zamiast statycznego JPG
+4. **Email z PDF** - wysyłaj PDF automatycznie po utworzeniu pakietu
+5. **Zapis w storage** - archiwizuj wygenerowane PDF w `storage/app/packages/`
+
+### Troubleshooting
+
+**Problem:** PDF się nie generuje
+```bash
+# Sprawdź logi
+docker exec platformapakiety-laravel.test-1 tail -50 /var/www/html/storage/logs/laravel.log
+
+# Sprawdź czy pliki JPG istnieją
+ls -la public/pdf-templates/
+```
+
+**Problem:** Polskie znaki się nie wyświetlają
+```php
+// Upewnij się że używasz mb_strtoupper z UTF-8
+mb_strtoupper($text, 'UTF-8')
+
+// I że TCPDF ma ustawiony UTF-8
+new TCPDF('L', 'mm', [99, 210], true, 'UTF-8', false);
+```
+
+**Problem:** Tekst jest w złym miejscu
+```php
+// Zmień współrzędne XY w createPage1()
+$this->pdf->SetXY(X_MM, Y_MM);  // Zwiększ X=prawo, Y=dół
+```
 
 ---
 

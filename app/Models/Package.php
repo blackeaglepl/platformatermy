@@ -11,7 +11,7 @@ class Package extends Model
 
     protected $fillable = [
         'package_id',      // Auto-generated: YYYYMMDD-XX
-        'owner_name',      // Renamed from custom_id
+        'custom_id',       // Contains owner/recipient name
         'package_type',
         'created_by',
         'notes',
@@ -37,6 +37,11 @@ class Package extends Model
     public function usages()
     {
         return $this->hasMany(PackageServiceUsage::class);
+    }
+
+    public function logs()
+    {
+        return $this->hasMany(PackageLog::class);
     }
 
     public function getUsagePercentageAttribute()

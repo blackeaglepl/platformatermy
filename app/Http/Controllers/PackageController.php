@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Package;
+use App\Models\PackageLog;
 use App\Models\PackageService;
 use App\Models\PackageServiceUsage;
+use App\Services\PackagePdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -41,7 +43,7 @@ class PackageController extends Controller
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('package_id', 'like', "%{$search}%")
-                  ->orWhere('owner_name', 'like', "%{$search}%");
+                  ->orWhere('custom_id', 'like', "%{$search}%");
             });
         }
 
@@ -64,7 +66,7 @@ class PackageController extends Controller
                 return [
                     'id' => $package->id,
                     'package_id' => $package->package_id,
-                    'owner_name' => $package->owner_name,
+                    'owner_name' => $package->custom_id,  // custom_id contains owner name
                     'package_type' => $package->package_type,
                     'package_type_name' => $this->getPackageTypeName($package->package_type),
                     'created_by' => $package->creator->name,
@@ -123,7 +125,7 @@ class PackageController extends Controller
         try {
             // Create package (package_id is auto-generated in model boot method)
             $package = Package::create([
-                'owner_name' => $validated['owner_name'],
+                'custom_id' => $validated['owner_name'],  // custom_id contains owner name
                 'package_type' => $validated['package_type'],
                 'created_by' => Auth::id(),
                 'notes' => $validated['notes'] ?? null,
@@ -149,6 +151,21 @@ class PackageController extends Controller
 
             DB::commit();
 
+            // Log package creation (non-blocking)
+            try {
+                PackageLog::logAction(
+                    $package->id,
+                    'package_created',
+                    [
+                        'package_type' => $this->getPackageTypeName($validated['package_type']),
+                        'owner_name' => $validated['owner_name'],
+                    ]
+                );
+            } catch (\Exception $e) {
+                // Log error but don't block package creation
+                \Log::error('Failed to log package creation: ' . $e->getMessage());
+            }
+
             return redirect()->route('packages.show', $package->id)
                 ->with('success', "Pakiet {$package->package_id} został utworzony pomyślnie!");
 
@@ -163,7 +180,16 @@ class PackageController extends Controller
      */
     public function show(Package $package)
     {
-        $package->load(['creator', 'usages.service', 'usages.marker']);
+        $package->load([
+            'creator',
+            'usages.service',
+            'usages.marker',
+            'logs' => function ($query) {
+                $query->with('user:id,name')
+                      ->latest()
+                      ->limit(40);
+            }
+        ]);
 
         // Separate regular services and extra services
         $regularUsages = $package->usages->filter(function ($usage) {
@@ -183,7 +209,7 @@ class PackageController extends Controller
             'package' => [
                 'id' => $package->id,
                 'package_id' => $package->package_id,           // Auto-generated ID
-                'owner_name' => $package->owner_name,          // Owner/recipient name
+                'owner_name' => $package->custom_id,            // custom_id contains owner name
                 'package_type' => $package->package_type,
                 'package_type_name' => $this->getPackageTypeName($package->package_type),
                 'created_by' => $package->creator->name,
@@ -205,6 +231,15 @@ class PackageController extends Controller
                 'extra_usages' => $extraUsages->map(function ($usage) {
                     return $this->formatUsage($usage);
                 })->values(),
+                'logs' => $package->logs->map(function ($log) {
+                    return [
+                        'id' => $log->id,
+                        'action' => $log->action_description,
+                        'user_name' => $log->user->name,
+                        'created_at' => $log->created_at->format('Y-m-d H:i:s'),
+                        'details' => $log->details,
+                    ];
+                }),
             ],
         ]);
     }
@@ -218,9 +253,25 @@ class PackageController extends Controller
             'owner_name' => 'required|string|max:255',
         ]);
 
+        $oldOwner = $package->custom_id;
+
         $package->update([
-            'owner_name' => $validated['owner_name'],
+            'custom_id' => $validated['owner_name'],  // custom_id contains owner name
         ]);
+
+        // Log owner change (non-blocking)
+        try {
+            PackageLog::logAction(
+                $package->id,
+                'owner_updated',
+                [
+                    'old_value' => $oldOwner,
+                    'new_value' => $validated['owner_name'],
+                ]
+            );
+        } catch (\Exception $e) {
+            \Log::error('Failed to log owner update: ' . $e->getMessage());
+        }
 
         return back()->with('success', 'Posiadacz pakietu został zaktualizowany!');
     }
@@ -237,6 +288,16 @@ class PackageController extends Controller
         $package->update([
             'notes' => $validated['notes'] ?? null,
         ]);
+
+        // Log notes update (non-blocking)
+        try {
+            PackageLog::logAction(
+                $package->id,
+                'notes_updated'
+            );
+        } catch (\Exception $e) {
+            \Log::error('Failed to log notes update: ' . $e->getMessage());
+        }
 
         return back()->with('success', 'Uwagi zostały zaktualizowane!');
     }
@@ -256,5 +317,27 @@ class PackageController extends Controller
             'marked_by' => $usage->marker ? $usage->marker->name : null,
             'notes' => $usage->notes,
         ];
+    }
+
+    /**
+     * Generate and download PDF for package.
+     */
+    public function generatePdf(Package $package)
+    {
+        $pdfService = new PackagePdfService();
+        $response = $pdfService->downloadPdf($package);
+
+        // Log PDF generation AFTER successful generation
+        try {
+            PackageLog::logAction(
+                $package->id,
+                'pdf_generated'
+            );
+        } catch (\Exception $e) {
+            // Log error but don't block PDF download
+            \Log::error('Failed to log PDF generation: ' . $e->getMessage());
+        }
+
+        return $response;
     }
 }

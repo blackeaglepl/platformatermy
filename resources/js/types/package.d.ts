@@ -30,6 +30,14 @@ export interface Package {
     notes: string | null;
 }
 
+export interface PackageLog {
+    id: number;
+    action: string;
+    user_name: string;
+    created_at: string;
+    details?: Record<string, any>;
+}
+
 export interface PackageWithUsages extends Package {
     usages_by_zone: {
         relaksu: PackageServiceUsage[];
@@ -37,6 +45,7 @@ export interface PackageWithUsages extends Package {
         smaku: PackageServiceUsage[];
     };
     extra_usages: PackageServiceUsage[];
+    logs: PackageLog[];
 }
 
 export interface PackageType {
