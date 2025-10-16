@@ -14,6 +14,7 @@ class PackageLog extends Model
         'user_id',
         'action_type',
         'details',
+        'ip_address',
     ];
 
     protected $casts = [
@@ -50,6 +51,7 @@ class PackageLog extends Model
             'user_id' => auth()->id(),
             'action_type' => $actionType,
             'details' => $details,
+            'ip_address' => request()->ip(),
         ]);
     }
 

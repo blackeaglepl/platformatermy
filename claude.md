@@ -365,14 +365,21 @@ Usługi:
 ```sql
 CREATE TABLE packages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    custom_id VARCHAR(255) UNIQUE NOT NULL,  -- np. "Kowalski_Styczen_2025"
-    package_type INTEGER NOT NULL,           -- 1-6
-    created_by INTEGER,                      -- user_id
+    package_id VARCHAR(255) UNIQUE NOT NULL,  -- automatycznie generowane (YYYYMMDD-XX)
+    custom_id VARCHAR(255) NOT NULL,          -- imię i nazwisko (np. "Jan Kowalski")
+    package_type INTEGER NOT NULL,            -- 1-6
+    created_by INTEGER,                       -- user_id
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
+    notes TEXT,                               -- opcjonalne uwagi
     FOREIGN KEY (created_by) REFERENCES users(id)
 );
 ```
+
+**⚠️ WAŻNA ZMIANA (2025-10-16):**
+- `custom_id` **NIE MA** constraint UNIQUE - ta sama osoba może mieć wiele pakietów
+- `package_id` jest unikalny i wystarcza do identyfikacji
+- Brak brzydkich suffixów (`_2`, `_3`) w PDF i UI
 
 #### Tabela: `package_services`
 ```sql
@@ -873,23 +880,404 @@ $this->pdf->SetXY(X_MM, Y_MM);  // Zwiększ X=prawo, Y=dół
 
 ## 🔐 Bezpieczeństwo
 
+**Status:** ✅ Zaimplementowane zabezpieczenia wielowarstwowe
+**Data implementacji:** 2025-10-16
+
+### Przegląd zabezpieczeń
+
+System został zabezpieczony na **5 poziomach**:
+1. ✅ **Rate Limiting** - ochrona przed automatycznym scrapowaniem
+2. ✅ **Audit Logging** - pełny audyt dostępu do danych
+3. ✅ **HTTPS wymuszony** - szyfrowanie komunikacji w production
+4. ✅ **Session Encryption** - zaszyfrowane sesje użytkowników
+5. ✅ **Encrypted Backups** - automatyczne backupy z szyfrowaniem GPG
+
+---
+
+### 1. Rate Limiting (Throttling)
+
+**Cel:** Zapobieganie automatycznemu pobieraniu danych przez boty/skrypty
+
+**Implementacja:** [routes/web.php:40](routes/web.php)
+```php
+Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function () {
+    // Wszystkie endpointy pakietów
+});
+```
+
+**Limity:**
+- **60 requestów na minutę** na użytkownika
+- Po przekroczeniu: HTTP 429 (Too Many Requests)
+- Licznik resetuje się co minutę
+
+**Co to chroni:**
+- ❌ Masowe pobieranie danych klientów
+- ❌ Scraping bazy pakietów
+- ❌ Brute-force na formularzach
+
+---
+
+### 2. Audit Logging z IP Address
+
+**Cel:** Śledzenie kto, kiedy i skąd dostępował wrażliwe dane
+
+**Implementacja:** [app/Models/PackageLog.php](app/Models/PackageLog.php)
+
+**Co jest logowane:**
+```php
+PackageLog {
+    package_id: int,
+    user_id: int,
+    action_type: string,  // 'package_viewed', 'service_marked', etc.
+    details: json,
+    ip_address: string,   // 🆕 IPv4/IPv6
+    created_at: timestamp
+}
+```
+
+**Przykładowy log:**
+```json
+{
+  "id": 123,
+  "package_id": 45,
+  "user_id": 2,
+  "action_type": "package_viewed",
+  "ip_address": "192.168.1.100",
+  "created_at": "2025-10-16 14:30:22"
+}
+```
+
+**Dostęp do logów:**
+- W interfejsie: Szczegóły pakietu → zakładka "Historia"
+- Przez bazę: `SELECT * FROM package_logs WHERE package_id = X`
+- Przez Tinker: `PackageLog::where('action_type', 'package_viewed')->get()`
+
+**Automatycznie logowane akcje:**
+| Akcja | Trigger | Lokalizacja kodu |
+|-------|---------|------------------|
+| `package_created` | Utworzenie pakietu | PackageController@store:158 |
+| `package_viewed` | Wyświetlenie szczegółów | PackageController@show:185 |
+| `service_marked` | Zaznaczenie usługi | PackageServiceUsageController@toggle |
+| `service_unmarked` | Odznaczenie usługi | PackageServiceUsageController@toggle |
+| `pdf_generated` | Pobranie PDF | PackageController@generatePdf:332 |
+| `owner_updated` | Zmiana posiadacza | PackageController@updateOwner:264 |
+| `notes_updated` | Edycja uwag | PackageController@updateNotes:294 |
+
+---
+
+### 3. HTTPS wymuszony (Production)
+
+**Cel:** Szyfrowanie komunikacji między przeglądarką a serwerem
+
+**Implementacja:** [app/Providers/AppServiceProvider.php:27](app/Providers/AppServiceProvider.php)
+```php
+if ($this->app->environment('production')) {
+    URL::forceScheme('https');
+}
+```
+
+**Efekt:**
+- Wszystkie URLe automatycznie `https://`
+- Przekierowania używają HTTPS
+- Cookies ustawione jako `secure`
+
+**Konfiguracja dla production:**
+```env
+APP_ENV=production
+APP_URL=https://yourdomain.com
+```
+
+---
+
+### 4. Session Encryption
+
+**Cel:** Ochrona danych sesji przed odczytem z bazy
+
+**Konfiguracja:** [.env.example:33](.env.example)
+```env
+SESSION_DRIVER=database
+SESSION_LIFETIME=120
+SESSION_ENCRYPT=true  # 🔐 Włączone szyfrowanie
+```
+
+**Co jest szyfrowane:**
+- Dane sesji w tabeli `sessions`
+- Flash messages
+- Dane formularzy (old input)
+- CSRF tokens
+
+**Algorytm:** AES-256-CBC (Laravel Encryption)
+
+---
+
+### 5. Automatyczne Backupy z Szyfrowaniem
+
+**Cel:** Ochrona backupów przed nieautoryzowanym dostępem
+
+#### Skrypt backupu
+
+**Lokalizacja:** [scripts/backup-database.sh](scripts/backup-database.sh)
+
+**Co robi:**
+1. Kopiuje `database/database.sqlite`
+2. Szyfruje za pomocą GPG (AES-256)
+3. Zapisuje do `storage/backups/db_backup_YYYYMMDD_HHMMSS.sqlite.gpg`
+4. Usuwa niezaszyfrowaną kopię
+5. Czyści backupy starsze niż 30 dni
+
+**Ręczne uruchomienie:**
+```bash
+docker exec platformapakiety-laravel.test-1 bash /var/www/html/scripts/backup-database.sh
+```
+
+**Automatyzacja (cron):**
+```bash
+# Wejdź do kontenera
+docker exec -it platformapakiety-laravel.test-1 bash
+
+# Edytuj crontab
+crontab -e
+
+# Dodaj linię (backup codziennie o 3:00 AM)
+0 3 * * * BACKUP_PASSWORD="$BACKUP_PASSWORD" /var/www/html/scripts/backup-database.sh >> /var/www/html/storage/logs/backup.log 2>&1
+```
+
+#### Restore z backupu
+
+**Lokalizacja:** [scripts/restore-database.sh](scripts/restore-database.sh)
+
+**Użycie:**
+```bash
+# Restore z najnowszego backupu
+docker exec -it platformapakiety-laravel.test-1 bash /var/www/html/scripts/restore-database.sh
+
+# Restore z konkretnego backupu
+docker exec -it platformapakiety-laravel.test-1 bash /var/www/html/scripts/restore-database.sh db_backup_20251016_030000.sqlite.gpg
+```
+
+**⚠️ Wymagane potwierdzenie:** Musisz wpisać `yes`
+
+#### Konfiguracja hasła backupu
+
+**W .env:**
+```env
+BACKUP_PASSWORD=YourSecureBackupPassword123!
+```
+
+**W docker-compose.yml:**
+```yaml
+environment:
+  BACKUP_PASSWORD: '${BACKUP_PASSWORD:-ChangeThisPassword123!}'
+```
+
+**WAŻNE:**
+- Użyj **silnego hasła** (min. 16 znaków)
+- **NIE commituj** `.env` do Git
+- Zapisz hasło w menedżerze haseł (LastPass, 1Password)
+
+#### Dokumentacja skryptów
+
+Pełna dokumentacja: [scripts/README.md](scripts/README.md)
+
+Zawiera:
+- Szczegółowe instrukcje użycia
+- Konfiguracja cron
+- Troubleshooting
+- Eksport do chmury (S3, Google Drive)
+- Testowanie backupów
+
+---
+
 ### Autentykacja
-- Wszystkie endpointy pakietów wymagają autentykacji (`auth:sanctum`)
-- Publiczne pozostają tylko `/api/traffic` i `/api/alerts`
+
+- **Wszystkie endpointy pakietów** wymagają autentykacji (`auth` middleware)
+- **Publiczne pozostają tylko:** `/api/traffic` i `/api/alerts` (dla strony Astro)
+- **Framework:** Laravel Breeze + Sanctum
+- **Hasła:** Bcrypt (12 rounds - domyślnie z Laravel)
 
 ### Autoryzacja
-- Każdy zalogowany pracownik może:
-  - Dodawać pakiety
-  - Przeglądać wszystkie pakiety
-  - Zaznaczać wykorzystanie usług
-- Admin może:
-  - Usuwać pakiety
-  - Modyfikować typy pakietów
+
+**Każdy zalogowany pracownik może:**
+- ✅ Dodawać pakiety
+- ✅ Przeglądać wszystkie pakiety
+- ✅ Zaznaczać wykorzystanie usług
+- ✅ Generować PDF
+- ✅ Edytować posiadaczy pakietów
+
+**Admin może (do implementacji):**
+- ⚠️ Usuwać pakiety
+- ⚠️ Modyfikować typy pakietów
+- ⚠️ Zarządzać użytkownikami
+
+---
+
+### Opcjonalne rozszerzenia (do przyszłej implementacji)
+
+#### Opcja A: Szyfrowanie wrażliwych danych (custom_id)
+
+**Kiedy wdrożyć:** Jeśli wymagane przez RODO/audyt
+
+**Implementacja:**
+```php
+// app/Models/Package.php
+protected $casts = [
+    'custom_id' => 'encrypted',  // Automatyczne AES-256 encryption
+];
+```
+
+**Plusy:**
+- ✅ Ktoś kto ukradnie bazę zobaczy tylko gibberish
+- ✅ Zero zmian w kodzie aplikacji
+- ✅ Używa APP_KEY z .env
+
+**Minusy:**
+- ❌ Wyszukiwanie po zaszyfrowanych polach wymaga dodatkowego hash index
+- ❌ Jeśli ktoś ukradnie .env + bazę = ma wszystko
+
+---
+
+#### Opcja B: Database File Encryption (SQLCipher)
+
+**Kiedy wdrożyć:** Dla maksymalnego bezpieczeństwa
+
+**Implementacja:** Wymaga custom PDO drivera (skomplikowane)
+
+**Plusy:**
+- ✅ Cała baza zaszyfrowana na poziomie pliku (AES-256)
+- ✅ Nawet root nie odczyta bez hasła
+
+**Minusy:**
+- ❌ Wymaga kompilacji PHP extension
+- ❌ Trudniejsze w maintenance
+
+**Status:** Odłożone (backup encryption wystarcza)
+
+---
+
+#### Opcja C: Dual Database Approach
+
+**Kiedy wdrożyć:** Dla compliance z RODO
+
+**Implementacja:**
+```php
+// Dane operacyjne w database.sqlite
+'sqlite' => [ /* normalne dane */ ],
+
+// Dane osobowe w oddzielnej bazie
+'sqlite_sensitive' => [
+    'database' => database_path('sensitive.sqlite'),
+    'password' => env('DB_SENSITIVE_PASSWORD'),
+],
+```
+
+**Plusy:**
+- ✅ Wyciek głównej bazy ≠ wyciek danych osobowych
+- ✅ Łatwiejsze RODO compliance (oddzielne backupy/usuwanie)
+
+**Minusy:**
+- ❌ Wymaga refaktoryzacji modeli
+- ❌ Joins między bazami są trudniejsze
+
+---
+
+### Checklist zabezpieczeń dla Production
+
+#### Przed uruchomieniem:
+- [ ] Ustaw `APP_ENV=production` w `.env`
+- [ ] Wygeneruj nowy `APP_KEY`: `php artisan key:generate`
+- [ ] Ustaw silne `BACKUP_PASSWORD` (min. 16 znaków)
+- [ ] Włącz `SESSION_ENCRYPT=true`
+- [ ] Skonfiguruj HTTPS (certyfikat SSL)
+- [ ] Ustaw `APP_DEBUG=false`
+- [ ] Skonfiguruj cron dla automatycznych backupów
+- [ ] Przetestuj restore z backupu
+
+#### Po uruchomieniu:
+- [ ] Monitoruj logi: `storage/logs/laravel.log`
+- [ ] Sprawdzaj logi backupów: `storage/logs/backup.log`
+- [ ] Regularnie przeglądaj `package_logs` (audyt dostępu)
+- [ ] Testuj restore z backupu raz na kwartał
+- [ ] Eksportuj backupy do chmury (S3/Google Drive)
+
+#### Regularne przeglądy (co miesiąc):
+- [ ] Sprawdź czy backupy działają: `ls storage/backups/`
+- [ ] Przejrzyj podejrzane logi IP: `SELECT * FROM package_logs WHERE ...`
+- [ ] Zmień `BACKUP_PASSWORD` co 90 dni
+- [ ] Usuń stare backupy ręcznie jeśli za dużo miejsca
+
+---
+
+### Monitorowanie bezpieczeństwa
+
+#### Sprawdź ostatnie dostępy do pakietów:
+```sql
+SELECT
+    pl.created_at,
+    u.name as user,
+    pl.ip_address,
+    p.custom_id as package_owner,
+    pl.action_type
+FROM package_logs pl
+JOIN users u ON pl.user_id = u.id
+JOIN packages p ON pl.package_id = p.id
+WHERE pl.action_type = 'package_viewed'
+ORDER BY pl.created_at DESC
+LIMIT 50;
+```
+
+#### Sprawdź podejrzane IP (wiele requestów):
+```sql
+SELECT
+    ip_address,
+    COUNT(*) as request_count,
+    MIN(created_at) as first_seen,
+    MAX(created_at) as last_seen
+FROM package_logs
+GROUP BY ip_address
+HAVING request_count > 100
+ORDER BY request_count DESC;
+```
+
+#### Sprawdź backupy:
+```bash
+docker exec platformapakiety-laravel.test-1 bash -c "
+  echo 'Total backups:' \$(ls -1 /var/www/html/storage/backups/*.gpg 2>/dev/null | wc -l)
+  echo 'Total size:' \$(du -sh /var/www/html/storage/backups/ 2>/dev/null)
+  echo 'Latest backup:' \$(ls -t /var/www/html/storage/backups/*.gpg 2>/dev/null | head -1)
+"
+```
+
+---
+
+### Kontakt w razie incydentu
+
+**Podejrzany dostęp:**
+1. Sprawdź logi: `package_logs` tabela
+2. Zidentyfikuj IP: `SELECT * FROM package_logs WHERE ip_address = 'X.X.X.X'`
+3. Zablokuj użytkownika jeśli potrzeba
+4. Zmień `APP_KEY` i `BACKUP_PASSWORD`
+
+**Utrata danych:**
+1. Natychmiast uruchom restore: `./scripts/restore-database.sh`
+2. Sprawdź integralność: `sqlite3 database.sqlite "PRAGMA integrity_check;"`
+3. Powiadom zespół
+
+**Wyciek backupu:**
+1. Dane są zaszyfrowane GPG (AES-256)
+2. Bez `BACKUP_PASSWORD` są bezużyteczne
+3. Zmień hasło backupu natychmiast
+4. Usuń skompromitowane backupy
 
 ---
 
 ## 📚 Dodatkowe zasoby
 
+### Dokumentacja projektu
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Pełny przewodnik deployment (WinSCP, SSH, production setup)
+- **[SECURITY.md](SECURITY.md)** - Polityka bezpieczeństwa i raportowanie błędów
+- **[scripts/README.md](scripts/README.md)** - Dokumentacja skryptów backup/restore
+
+### Dokumentacja zewnętrzna
 - [Laravel 11 Documentation](https://laravel.com/docs/11.x)
 - [React TypeScript Cheatsheet](https://react-typescript-cheatsheet.netlify.app/)
 - [Inertia.js Documentation](https://inertiajs.com/)

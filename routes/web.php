@@ -36,8 +36,8 @@ Route::get('/dashboard', function () {
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-// Package routes
-Route::middleware(['auth', 'verified'])->group(function () {
+// Package routes - with rate limiting (60 requests per minute)
+Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function () {
     Route::get('/packages', [PackageController::class, 'index'])->name('packages.index');
     Route::get('/packages/create', [PackageController::class, 'create'])->name('packages.create');
     Route::post('/packages', [PackageController::class, 'store'])->name('packages.store');

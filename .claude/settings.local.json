@@ -27,7 +27,11 @@
       "Bash(mkdir:*)",
       "Bash(cp:*)",
       "Bash(git add:*)",
-      "Bash(MSYS_NO_PATHCONV=1 docker exec:*)"
+      "Bash(MSYS_NO_PATHCONV=1 docker exec:*)",
+      "Bash(for i in {1..6})",
+      "Bash(do echo \"Pakiet $i:\")",
+      "Bash(ls:*)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

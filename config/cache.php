@@ -13,9 +13,15 @@ return [
     | framework. This connection is utilized if another isn't explicitly
     | specified when running a cache operation inside the application.
     |
+    | IMPORTANT: For SQLite (development), we use 'file' cache to avoid
+    | database lock conflicts. For MySQL/PostgreSQL (production), we use
+    | 'database' cache for better performance. This is automatically handled.
+    |
     */
 
-    'default' => env('CACHE_STORE', 'database'),
+    'default' => env('CACHE_STORE') ?: (
+        env('DB_CONNECTION') === 'sqlite' ? 'file' : 'database'
+    ),
 
     /*
     |--------------------------------------------------------------------------
