@@ -17,6 +17,7 @@ export default function Show({ auth, package: pkg, flash }: Props) {
     const [pendingServiceName, setPendingServiceName] = useState<string>('');
     const [isEditingNotes, setIsEditingNotes] = useState(false);
     const [isEditingOwner, setIsEditingOwner] = useState(false);
+    const [isToggling, setIsToggling] = useState<number | null>(null); // Track which service is being toggled
 
     const { data: notesData, setData: setNotesData, patch: patchNotes, processing: processingNotes } = useForm({
         notes: pkg.notes || '',
@@ -27,6 +28,11 @@ export default function Show({ auth, package: pkg, flash }: Props) {
     });
 
     const handleToggleUsage = (usage: PackageServiceUsage) => {
+        // Prevent double-clicking
+        if (isToggling === usage.id) {
+            return;
+        }
+
         // Jeśli usługa jest już wykorzystana, pytamy o potwierdzenie
         if (usage.is_used) {
             setPendingUsageId(usage.id);
@@ -39,6 +45,9 @@ export default function Show({ auth, package: pkg, flash }: Props) {
     };
 
     const performToggle = (usageId: number) => {
+        // Set toggling state to prevent duplicate requests
+        setIsToggling(usageId);
+
         router.post(
             route('package-usage.toggle', usageId),
             {},
@@ -48,6 +57,14 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                     setShowConfirmModal(false);
                     setPendingUsageId(null);
                     setPendingServiceName('');
+                    setIsToggling(null); // Clear toggling state
+                },
+                onError: () => {
+                    setIsToggling(null); // Clear toggling state on error
+                },
+                onFinish: () => {
+                    // Fallback to ensure state is cleared
+                    setTimeout(() => setIsToggling(null), 500);
                 }
             }
         );
@@ -119,7 +136,8 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                                     type="checkbox"
                                     checked={usage.is_used}
                                     onChange={() => handleToggleUsage(usage)}
-                                    className="mt-1 h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                    disabled={isToggling === usage.id}
+                                    className="mt-1 h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                                 />
                                 <div className="ml-3 flex-1">
                                     <div className="font-medium text-gray-900">
@@ -397,7 +415,8 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                                                             type="checkbox"
                                                             checked={usage.is_used}
                                                             onChange={() => handleToggleUsage(usage)}
-                                                            className="mt-1 h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                                            disabled={isToggling === usage.id}
+                                                            className="mt-1 h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                                                         />
                                                         <div className="ml-3 flex-1">
                                                             <div className="font-medium text-gray-900">

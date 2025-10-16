@@ -45,6 +45,9 @@ class PackageServiceUsageController extends Controller
         // Load service relation for logging
         $usage->load('service');
 
+        // Store original state before update
+        $wasUsed = $usage->used_at !== null;
+
         if ($usage->used_at) {
             // If used, unmark it
             $usage->update([
@@ -53,13 +56,24 @@ class PackageServiceUsageController extends Controller
                 'notes' => null,
             ]);
 
-            // Log the action (non-blocking)
+            // Log the action ONLY ONCE (non-blocking + idempotency check)
             try {
-                PackageLog::logAction(
-                    $usage->package_id,
-                    $usage->service->is_extra ? 'extra_service_unmarked' : 'service_unmarked',
-                    ['service_name' => $usage->service->name]
-                );
+                $actionType = $usage->service->is_extra ? 'extra_service_unmarked' : 'service_unmarked';
+
+                // Check if this exact action was already logged in the last 2 seconds
+                $recentLog = PackageLog::where('package_id', $usage->package_id)
+                    ->where('action_type', $actionType)
+                    ->where('created_at', '>', now()->subSeconds(2))
+                    ->whereRaw("details->>'service_name' = ?", [$usage->service->name])
+                    ->first();
+
+                if (!$recentLog) {
+                    PackageLog::logAction(
+                        $usage->package_id,
+                        $actionType,
+                        ['service_name' => $usage->service->name]
+                    );
+                }
             } catch (\Exception $e) {
                 \Log::error('Failed to log service unmarked: ' . $e->getMessage());
             }
@@ -72,13 +86,24 @@ class PackageServiceUsageController extends Controller
                 'marked_by' => Auth::id(),
             ]);
 
-            // Log the action (non-blocking)
+            // Log the action ONLY ONCE (non-blocking + idempotency check)
             try {
-                PackageLog::logAction(
-                    $usage->package_id,
-                    $usage->service->is_extra ? 'extra_service_marked' : 'service_marked',
-                    ['service_name' => $usage->service->name]
-                );
+                $actionType = $usage->service->is_extra ? 'extra_service_marked' : 'service_marked';
+
+                // Check if this exact action was already logged in the last 2 seconds
+                $recentLog = PackageLog::where('package_id', $usage->package_id)
+                    ->where('action_type', $actionType)
+                    ->where('created_at', '>', now()->subSeconds(2))
+                    ->whereRaw("details->>'service_name' = ?", [$usage->service->name])
+                    ->first();
+
+                if (!$recentLog) {
+                    PackageLog::logAction(
+                        $usage->package_id,
+                        $actionType,
+                        ['service_name' => $usage->service->name]
+                    );
+                }
             } catch (\Exception $e) {
                 \Log::error('Failed to log service marked: ' . $e->getMessage());
             }
