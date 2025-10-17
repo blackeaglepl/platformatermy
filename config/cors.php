@@ -23,7 +23,9 @@ return [
 
     'allowed_origins_patterns' => [],
 
-    'allowed_headers' => ['*'],
+    // Security: Explicitly define allowed headers instead of wildcard
+    // Principle of least privilege: only allow headers that are actually used
+    'allowed_headers' => ['Content-Type', 'X-Requested-With', 'Authorization'],
 
     'exposed_headers' => [],
 

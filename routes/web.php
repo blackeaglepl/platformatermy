@@ -45,23 +45,39 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function () {
     Route::get('/packages/{package}/pdf', [PackageController::class, 'generatePdf'])->name('packages.pdf');
     Route::patch('/packages/{package}/owner', [PackageController::class, 'updateOwner'])->name('packages.update-owner');
     Route::patch('/packages/{package}/notes', [PackageController::class, 'updateNotes'])->name('packages.update-notes');
+    Route::post('/packages/{package}/add-variant', [PackageController::class, 'addVariantService'])->name('packages.add-variant');
 
     // Service usage routes
     Route::post('/package-usage/{usage}/toggle', [PackageServiceUsageController::class, 'toggle'])->name('package-usage.toggle');
 });
 
 Route::patch('/dashboard', function (Request $request) {
-    if ($request->type || $request->text) {
+    // Security: Validate and sanitize all inputs to prevent XSS and injection attacks
+
+    // Update alert if provided
+    if ($request->has('type') || $request->has('text')) {
+        $validated = $request->validate([
+            'type' => 'required|in:WARNING,PROMO,INFO',
+            'text' => 'required|string|max:255',
+            'enabled' => 'required|boolean',
+        ]);
+
         $alert = Alert::first();
-        $alert->type = $request->type;
-        $alert->text = $request->text;
-        $alert->enabled = $request->enabled;
+        $alert->type = $validated['type'];
+        // Security: Strip HTML tags to prevent XSS (Stored Cross-Site Scripting)
+        $alert->text = strip_tags($validated['text']);
+        $alert->enabled = $validated['enabled'];
         $alert->save();
     }
 
-    if ($request->value) {
+    // Update traffic if provided
+    if ($request->has('value')) {
+        $validated = $request->validate([
+            'value' => 'required|integer|min:0|max:100',
+        ]);
+
         $traffic = Traffic::first();
-        $traffic->value = $request->value;
+        $traffic->value = $validated['value'];
         $traffic->save();
     }
 

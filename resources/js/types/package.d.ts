@@ -38,6 +38,14 @@ export interface PackageLog {
     details?: Record<string, any>;
 }
 
+export interface VariantService {
+    id: number;
+    name: string;
+    zone: 'relaksu' | 'odnowy' | 'smaku';
+    description: string | null;
+    duration: number | null;
+}
+
 export interface PackageWithUsages extends Package {
     usages_by_zone: {
         relaksu: PackageServiceUsage[];
@@ -46,6 +54,7 @@ export interface PackageWithUsages extends Package {
     };
     extra_usages: PackageServiceUsage[];
     logs: PackageLog[];
+    variant_services?: Record<string, VariantService[]>;  // Grouped by variant_group
 }
 
 export interface PackageType {

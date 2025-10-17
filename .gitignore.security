@@ -1,0 +1,30 @@
+# 🔐 Security-sensitive files (NEVER commit these!)
+
+# Production credentials
+SECURITY_CREDENTIALS.md
+PRODUCTION_ENV.txt
+.env.production
+.env.prod
+
+# SSH keys
+*.pem
+*.key
+id_rsa*
+authorized_keys
+
+# Backup passwords
+backup_passwords.txt
+credentials.txt
+
+# Database exports (may contain sensitive data)
+*.sql
+*.sqlite.backup
+*.db.backup
+
+# GPG private keys
+*.gpg-private
+*.asc
+
+# SSL certificates with private keys
+*.pfx
+*.p12

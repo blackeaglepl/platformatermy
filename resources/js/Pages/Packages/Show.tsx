@@ -390,6 +390,67 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                                     </div>
                                 )}
 
+                            {/* Variant Services Section (DO WYBORU) */}
+                            {pkg.variant_services && Object.keys(pkg.variant_services).length > 0 && (
+                                <>
+                                    <div className="border-t-2 border-gray-300 my-8"></div>
+
+                                    <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                                            <span className="mr-2">🔄</span>
+                                            Warianty usług DO WYBORU
+                                        </h3>
+                                        <p className="text-sm text-gray-600 mb-4 italic">
+                                            Klient może wybrać jeden z poniższych wariantów. Dodaj wybraną usługę klikając przycisk "Dodaj".
+                                        </p>
+
+                                        {Object.entries(pkg.variant_services).map(([groupName, services]: [string, any[]]) => (
+                                            <div key={groupName} className="mb-4 last:mb-0">
+                                                <div className="font-semibold text-gray-700 mb-2 text-sm">
+                                                    Grupa: {groupName}
+                                                </div>
+                                                <div className="space-y-2">
+                                                    {services.map((service) => (
+                                                        <div
+                                                            key={service.id}
+                                                            className="p-3 rounded-lg border bg-white border-purple-200 flex items-start justify-between"
+                                                        >
+                                                            <div className="flex-1">
+                                                                <div className="font-medium text-gray-900">
+                                                                    {service.name}
+                                                                </div>
+                                                                {service.description && (
+                                                                    <div className="text-sm text-gray-500 mt-1">
+                                                                        {service.description}
+                                                                    </div>
+                                                                )}
+                                                                {service.duration && (
+                                                                    <div className="text-xs text-gray-400 mt-1">
+                                                                        Czas trwania: {service.duration} min
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <button
+                                                                onClick={() => {
+                                                                    router.post(
+                                                                        route('packages.add-variant', pkg.id),
+                                                                        { service_id: service.id },
+                                                                        { preserveScroll: true }
+                                                                    );
+                                                                }}
+                                                                className="ml-4 px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors flex-shrink-0"
+                                                            >
+                                                                + Dodaj
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+
                             {/* Extra Services Section */}
                             {pkg.extra_usages && pkg.extra_usages.length > 0 && (
                                 <>
