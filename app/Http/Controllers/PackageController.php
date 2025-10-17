@@ -136,13 +136,8 @@ class PackageController extends Controller
                 ->where('package_type', $validated['package_type'])
                 ->get();
 
-            // Create usage records for each service (respecting quantity and variants)
+            // Create usage records for each service (including variants)
             foreach ($serviceAssignments as $assignment) {
-                // Skip variant services - they will be created only when user selects one
-                if ($assignment->is_variant) {
-                    continue;
-                }
-
                 // Create instance for each quantity
                 for ($i = 0; $i < $assignment->quantity; $i++) {
                     PackageServiceUsage::create([
@@ -212,19 +207,6 @@ class PackageController extends Controller
             return $usage->service->zone;
         });
 
-        // Get variant services for this package type (services with is_variant=true)
-        // These are NOT in package_service_usage yet - they need to be added manually by staff
-        $variantServices = DB::table('package_type_services as pts')
-            ->join('package_services as ps', 'pts.service_id', '=', 'ps.id')
-            ->where('pts.package_type', $package->package_type)
-            ->where('pts.is_variant', true)
-            ->select('ps.id', 'ps.name', 'ps.zone', 'ps.description', 'ps.duration', 'pts.variant_group')
-            ->get()
-            ->groupBy('variant_group')
-            ->map(function ($group) {
-                return $group->values();
-            });
-
         return Inertia::render('Packages/Show', [
             'package' => [
                 'id' => $package->id,
@@ -237,20 +219,19 @@ class PackageController extends Controller
                 'usage_percentage' => $package->usage_percentage,
                 'is_fully_used' => $package->isFullyUsed(),
                 'notes' => $package->notes,
-                'variant_services' => $variantServices,
                 'usages_by_zone' => [
-                    'relaksu' => $usagesByZone->get('relaksu', collect())->map(function ($usage) {
-                        return $this->formatUsage($usage);
+                    'relaksu' => $usagesByZone->get('relaksu', collect())->map(function ($usage) use ($package) {
+                        return $this->formatUsage($usage, $package);
                     }),
-                    'odnowy' => $usagesByZone->get('odnowy', collect())->map(function ($usage) {
-                        return $this->formatUsage($usage);
+                    'odnowy' => $usagesByZone->get('odnowy', collect())->map(function ($usage) use ($package) {
+                        return $this->formatUsage($usage, $package);
                     }),
-                    'smaku' => $usagesByZone->get('smaku', collect())->map(function ($usage) {
-                        return $this->formatUsage($usage);
+                    'smaku' => $usagesByZone->get('smaku', collect())->map(function ($usage) use ($package) {
+                        return $this->formatUsage($usage, $package);
                     }),
                 ],
-                'extra_usages' => $extraUsages->map(function ($usage) {
-                    return $this->formatUsage($usage);
+                'extra_usages' => $extraUsages->map(function ($usage) use ($package) {
+                    return $this->formatUsage($usage, $package);
                 })->values(),
                 'logs' => $package->logs->map(function ($log) {
                     return [
@@ -326,17 +307,33 @@ class PackageController extends Controller
     /**
      * Format usage data for frontend.
      */
-    private function formatUsage($usage)
+    private function formatUsage($usage, $package = null)
     {
+        // Get variant_group from package_type_services if this is a variant
+        $variantGroup = null;
+        if ($package) {
+            $variantInfo = DB::table('package_type_services')
+                ->where('package_type', $package->package_type)
+                ->where('service_id', $usage->service_id)
+                ->where('is_variant', true)
+                ->select('variant_group')
+                ->first();
+
+            $variantGroup = $variantInfo ? $variantInfo->variant_group : null;
+        }
+
         return [
             'id' => $usage->id,
+            'service_id' => $usage->service_id,
             'service_name' => $usage->service->name,
             'service_description' => $usage->service->description,
             'service_duration' => $usage->service->duration,
+            'instance_number' => $usage->instance_number,
             'is_used' => $usage->used_at !== null,
             'used_at' => $usage->used_at ? $usage->used_at->format('Y-m-d H:i') : null,
             'marked_by' => $usage->marker ? $usage->marker->name : null,
             'notes' => $usage->notes,
+            'variant_group' => $variantGroup,  // null if not a variant
         ];
     }
 
@@ -362,45 +359,4 @@ class PackageController extends Controller
         return $response;
     }
 
-    /**
-     * Add a variant service to package (when staff selects which variant customer chose).
-     */
-    public function addVariantService(Request $request, Package $package)
-    {
-        $validated = $request->validate([
-            'service_id' => 'required|integer|exists:package_services,id',
-        ]);
-
-        // Check if this service is a variant for this package type
-        $isVariant = DB::table('package_type_services')
-            ->where('package_type', $package->package_type)
-            ->where('service_id', $validated['service_id'])
-            ->where('is_variant', true)
-            ->exists();
-
-        if (!$isVariant) {
-            return back()->withErrors(['error' => 'Ta usługa nie jest wariantem dla tego pakietu.']);
-        }
-
-        // Check if service already exists in package_service_usage
-        $existingUsage = PackageServiceUsage::where('package_id', $package->id)
-            ->where('service_id', $validated['service_id'])
-            ->first();
-
-        if ($existingUsage) {
-            return back()->withErrors(['error' => 'Ta usługa jest już dodana do pakietu.']);
-        }
-
-        // Add service to package
-        PackageServiceUsage::create([
-            'package_id' => $package->id,
-            'service_id' => $validated['service_id'],
-            'instance_number' => null,
-            'used_at' => null,
-            'marked_by' => null,
-            'notes' => null,
-        ]);
-
-        return back()->with('success', 'Wariant usługi został dodany do pakietu!');
-    }
 }

@@ -3,6 +3,7 @@ import { PageProps } from '@/types';
 import { PackageWithUsages, PackageServiceUsage } from '@/types/package';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import VariantServiceGroup from '@/Components/VariantServiceGroup';
 
 interface Props extends PageProps {
     package: PackageWithUsages;
@@ -115,6 +116,21 @@ export default function Show({ auth, package: pkg, flash }: Props) {
             return null;
         }
 
+        // Group services by variant_group
+        const variantGroups: Record<string, PackageServiceUsage[]> = {};
+        const regularServices: PackageServiceUsage[] = [];
+
+        services.forEach((service) => {
+            if (service.variant_group) {
+                if (!variantGroups[service.variant_group]) {
+                    variantGroups[service.variant_group] = [];
+                }
+                variantGroups[service.variant_group].push(service);
+            } else {
+                regularServices.push(service);
+            }
+        });
+
         return (
             <div className="flex-1">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -122,7 +138,19 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                     {title}
                 </h3>
                 <div className="space-y-3">
-                    {services.map((usage) => (
+                    {/* Render variant groups first */}
+                    {Object.entries(variantGroups).map(([groupName, groupServices]) => (
+                        <VariantServiceGroup
+                            key={groupName}
+                            variantGroup={groupName}
+                            services={groupServices}
+                            isToggling={isToggling}
+                            onToggle={handleToggleUsage}
+                        />
+                    ))}
+
+                    {/* Then render regular services */}
+                    {regularServices.map((usage) => (
                         <div
                             key={usage.id}
                             className={`p-3 rounded-lg border ${
@@ -368,7 +396,7 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                                 {renderServiceList(
                                     pkg.usages_by_zone.relaksu,
                                     'Strefa Relaksu',
-                                    '🧘'
+                                    '💧'
                                 )}
                                 {renderServiceList(
                                     pkg.usages_by_zone.odnowy,

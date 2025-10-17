@@ -8,13 +8,16 @@ export interface PackageService {
 
 export interface PackageServiceUsage {
     id: number;
+    service_id: number;
     service_name: string;
     service_description: string | null;
     service_duration: number | null;
+    instance_number: number | null;
     is_used: boolean;
     used_at: string | null;
     marked_by: string | null;
     notes: string | null;
+    variant_group: string | null;  // null if not a variant
 }
 
 export interface Package {
@@ -38,14 +41,6 @@ export interface PackageLog {
     details?: Record<string, any>;
 }
 
-export interface VariantService {
-    id: number;
-    name: string;
-    zone: 'relaksu' | 'odnowy' | 'smaku';
-    description: string | null;
-    duration: number | null;
-}
-
 export interface PackageWithUsages extends Package {
     usages_by_zone: {
         relaksu: PackageServiceUsage[];
@@ -54,7 +49,6 @@ export interface PackageWithUsages extends Package {
     };
     extra_usages: PackageServiceUsage[];
     logs: PackageLog[];
-    variant_services?: Record<string, VariantService[]>;  // Grouped by variant_group
 }
 
 export interface PackageType {

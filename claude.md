@@ -310,18 +310,8 @@ Umożliwienie personelowi śledzenia wykorzstania sprzedanych pakietów usług d
 
 **Formularz:**
 - **Typ pakietu:** Wybór z listy (1-6)
-- **ID pakietu:** Ręczne wpisanie (np. "Kowalski_Styczen_2025")
 - **Automatyczne przypisanie usług:** Na podstawie typu pakietu
 
-**Typy pakietów (do uzgodnienia):**
-```
-Pakiet 1: [Lista usług]
-Pakiet 2: [Lista usług]
-Pakiet 3: [Lista usług]
-Pakiet 4: [Lista usług]
-Pakiet 5: [Lista usług]
-Pakiet 6: [Lista usług]
-```
 
 #### 2. Przeglądanie pakietów (Wszyscy pracownicy)
 **Ekran:** Dashboard → "Lista pakietów"
@@ -449,7 +439,7 @@ POST   /api/package-types/{type}/services
        - Dodaj usługę do typu pakietu (admin)
 ```
 
-### Modele (propozycja)
+### Modele 
 
 ```php
 // app/Models/Package.php
@@ -486,7 +476,7 @@ class PackageServiceUsage extends Model
 }
 ```
 
-### Komponenty React (propozycja)
+### Komponenty React 
 
 ```
 resources/js/Pages/
