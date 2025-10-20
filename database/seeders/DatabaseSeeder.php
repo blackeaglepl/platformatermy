@@ -20,10 +20,9 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);
 
-        // Seed package services and types
+        // Seed real package services and types (19 services + 6 package types)
         $this->call([
-            PackageServiceSeeder::class,
-            PackageTypeSeeder::class,
+            RealPackageServicesSeeder::class,
         ]);
     }
 }

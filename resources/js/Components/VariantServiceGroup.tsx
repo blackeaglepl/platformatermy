@@ -9,10 +9,13 @@ interface Props {
 }
 
 export default function VariantServiceGroup({ variantGroup, services, isToggling, onToggle }: Props) {
-    // Group services into variants (pairs or sets)
-    // Assumption: services come in order, pair them sequentially
-    // For Pakiet 4: [masaż relaksacyjny, zabieg twarzy, masaż shea, peeling]
-    // Variant A = [0, 1], Variant B = [2, 3]
+    const getGroupTitle = (groupName: string): string => {
+        const osobaMatch = groupName.match(/^osoba(\d+)_/);
+        if (osobaMatch) {
+            return `Wybierz usługę dla Osoby ${osobaMatch[1]}`;
+        }
+        return `Wybierz wariant`;
+    };
 
     const variantsData: Array<{label: string, services: PackageServiceUsage[]}> = [];
 
@@ -20,7 +23,8 @@ export default function VariantServiceGroup({ variantGroup, services, isToggling
     // TODO: Make this more flexible if needed
     for (let i = 0; i < services.length; i += 2) {
         const variantServices = services.slice(i, i + 2);
-        const label = String.fromCharCode(65 + (i / 2)); // A, B, C...
+        const variantIndex = Math.floor(i / 2); // 0, 1, 2...
+        const label = String.fromCharCode(65 + variantIndex); // A, B, C...
         variantsData.push({
             label: `Wariant ${label}`,
             services: variantServices
@@ -71,10 +75,13 @@ export default function VariantServiceGroup({ variantGroup, services, isToggling
         }
     };
 
-    const anyVariantSelected = services.some(s => s.is_used);
-
     return (
         <div className="mb-4">
+            <div className="mb-3">
+                <h4 className="font-semibold text-gray-800 text-sm">
+                    {getGroupTitle(variantGroup)}:
+                </h4>
+            </div>
             <div className="space-y-2">
                 {variantsData.map((variant, variantIndex) => {
                     const isSelected = isVariantFullySelected(variant.services);

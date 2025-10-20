@@ -31,9 +31,6 @@ class PackageController extends Controller
         return $packageNames[$type] ?? "Pakiet {$type}";
     }
 
-    /**
-     * Display a listing of packages.
-     */
     public function index(Request $request)
     {
         $query = Package::with(['creator', 'usages.service'])
@@ -43,30 +40,40 @@ class PackageController extends Controller
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('package_id', 'like', "%{$search}%")
-                  ->orWhere('custom_id', 'like', "%{$search}%");
+                  ->orWhere('owner_name', 'like', "%{$search}%");
             });
         }
 
-        // Server-side status filter using scopes
-        if ($status = $request->input('status')) {
-            switch ($status) {
-                case 'wykorzystane':
-                    $query->fullyUsed();
-                    break;
-                    
-                case 'aktywne':
-                    $query->active();
-                    break;
-            }
-        }
+        // Get status filter
+        $statusFilter = $request->input('status');
 
-        // Paginate with 25 items per page
-        $packages = $query->paginate(25)
-            ->through(function ($package) {
+        // If there's a status filter, we need to get all results and filter by usage_percentage
+        if ($statusFilter) {
+            $allPackages = $query->get();
+            
+            // Filter by usage_percentage
+            $filteredPackages = $allPackages->filter(function ($package) use ($statusFilter) {
+                $percentage = $package->usage_percentage;
+                
+                if ($statusFilter === 'wykorzystane') {
+                    return $percentage >= 100;
+                } elseif ($statusFilter === 'aktywne') {
+                    return $percentage < 100;
+                }
+                
+                return true;
+            });
+
+            // Manual pagination
+            $perPage = 25;
+            $currentPage = $request->input('page', 1);
+            $offset = ($currentPage - 1) * $perPage;
+
+            $paginatedItems = $filteredPackages->slice($offset, $perPage)->map(function ($package) {
                 return [
                     'id' => $package->id,
                     'package_id' => $package->package_id,
-                    'owner_name' => $package->custom_id,  // custom_id contains owner name
+                    'owner_name' => $package->owner_name,
                     'package_type' => $package->package_type,
                     'package_type_name' => $this->getPackageTypeName($package->package_type),
                     'created_by' => $package->creator->name,
@@ -74,7 +81,32 @@ class PackageController extends Controller
                     'usage_percentage' => $package->usage_percentage,
                     'is_fully_used' => $package->isFullyUsed(),
                 ];
-            });
+            })->values();
+
+            $packages = new \Illuminate\Pagination\LengthAwarePaginator(
+                $paginatedItems,
+                $filteredPackages->count(),
+                $perPage,
+                $currentPage,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+        } else {
+            // No status filter - use efficient database pagination
+            $packages = $query->paginate(25)
+                ->through(function ($package) {
+                    return [
+                        'id' => $package->id,
+                        'package_id' => $package->package_id,
+                        'owner_name' => $package->owner_name,
+                        'package_type' => $package->package_type,
+                        'package_type_name' => $this->getPackageTypeName($package->package_type),
+                        'created_by' => $package->creator->name,
+                        'created_at' => $package->created_at->format('Y-m-d H:i'),
+                        'usage_percentage' => $package->usage_percentage,
+                        'is_fully_used' => $package->isFullyUsed(),
+                    ];
+                });
+        }
 
         return Inertia::render('Packages/Index', [
             'packages' => $packages,
@@ -125,7 +157,7 @@ class PackageController extends Controller
         try {
             // Create package (package_id is auto-generated in model boot method)
             $package = Package::create([
-                'custom_id' => $validated['owner_name'],  // custom_id contains owner name
+                'owner_name' => $validated['owner_name'],
                 'package_type' => $validated['package_type'],
                 'created_by' => Auth::id(),
                 'notes' => $validated['notes'] ?? null,
@@ -143,6 +175,7 @@ class PackageController extends Controller
                     PackageServiceUsage::create([
                         'package_id' => $package->id,
                         'service_id' => $assignment->service_id,
+                        'variant_group' => $assignment->variant_group,
                         'instance_number' => $assignment->quantity > 1 ? ($i + 1) : null,
                         'used_at' => null,
                         'marked_by' => null,
@@ -211,7 +244,7 @@ class PackageController extends Controller
             'package' => [
                 'id' => $package->id,
                 'package_id' => $package->package_id,           // Auto-generated ID
-                'owner_name' => $package->custom_id,            // custom_id contains owner name
+                'owner_name' => $package->owner_name,            // owner_name contains owner name
                 'package_type' => $package->package_type,
                 'package_type_name' => $this->getPackageTypeName($package->package_type),
                 'created_by' => $package->creator->name,
@@ -219,6 +252,7 @@ class PackageController extends Controller
                 'usage_percentage' => $package->usage_percentage,
                 'is_fully_used' => $package->isFullyUsed(),
                 'notes' => $package->notes,
+                'guest_count' => $package->guest_count,          // Number of guests (only for types 4-6)
                 'usages_by_zone' => [
                     'relaksu' => $usagesByZone->get('relaksu', collect())->map(function ($usage) use ($package) {
                         return $this->formatUsage($usage, $package);
@@ -255,10 +289,10 @@ class PackageController extends Controller
             'owner_name' => 'required|string|max:255',
         ]);
 
-        $oldOwner = $package->custom_id;
+        $oldOwner = $package->owner_name;
 
         $package->update([
-            'custom_id' => $validated['owner_name'],  // custom_id contains owner name
+            'owner_name' => $validated['owner_name'],  // owner_name contains owner name
         ]);
 
         // Log owner change (non-blocking)
@@ -305,23 +339,43 @@ class PackageController extends Controller
     }
 
     /**
+     * Update guest count for packages 4-6 (Kobiecy Chill, Wspólna Regeneracja, Impreza Urodzinowa).
+     * Guest count is informational only - does NOT affect usage percentage calculation.
+     */
+    public function updateGuestCount(Request $request, Package $package)
+    {
+        // Only allow for package types 4-6
+        if (!in_array($package->package_type, [4, 5, 6])) {
+            return back()->with('error', 'Liczba osób jest dostępna tylko dla pakietów: Kobiecy Chill, Wspólna Regeneracja, Impreza Urodzinowa.');
+        }
+
+        $validated = $request->validate([
+            'guest_count' => 'nullable|integer|min:1|max:50',
+        ]);
+
+        $package->update([
+            'guest_count' => $validated['guest_count'] ?? null,
+        ]);
+
+        // Log guest count update (non-blocking)
+        try {
+            PackageLog::logAction(
+                $package->id,
+                'guest_count_updated',
+                ['new_count' => $validated['guest_count'] ?? null]
+            );
+        } catch (\Exception $e) {
+            \Log::error('Failed to log guest count update: ' . $e->getMessage());
+        }
+
+        return back()->with('success', 'Liczba osób została zaktualizowana!');
+    }
+
+    /**
      * Format usage data for frontend.
      */
     private function formatUsage($usage, $package = null)
     {
-        // Get variant_group from package_type_services if this is a variant
-        $variantGroup = null;
-        if ($package) {
-            $variantInfo = DB::table('package_type_services')
-                ->where('package_type', $package->package_type)
-                ->where('service_id', $usage->service_id)
-                ->where('is_variant', true)
-                ->select('variant_group')
-                ->first();
-
-            $variantGroup = $variantInfo ? $variantInfo->variant_group : null;
-        }
-
         return [
             'id' => $usage->id,
             'service_id' => $usage->service_id,
@@ -333,7 +387,7 @@ class PackageController extends Controller
             'used_at' => $usage->used_at ? $usage->used_at->format('Y-m-d H:i') : null,
             'marked_by' => $usage->marker ? $usage->marker->name : null,
             'notes' => $usage->notes,
-            'variant_group' => $variantGroup,  // null if not a variant
+            'variant_group' => $usage->variant_group,  // Directly from package_service_usage
         ];
     }
 

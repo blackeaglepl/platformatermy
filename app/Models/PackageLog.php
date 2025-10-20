@@ -69,6 +69,9 @@ class PackageLog extends Model
             'pdf_generated' => 'Wygenerowano PDF',
             'owner_updated' => "Zmieniono posiadacza z '{$this->details['old_value']}' na '{$this->details['new_value']}'",
             'notes_updated' => 'Zaktualizowano uwagi',
+            'guest_count_updated' => isset($this->details['new_count'])
+                ? "Zmieniono liczbę osób na: {$this->details['new_count']}"
+                : 'Zmieniono liczbę osób',
             default => 'Nieznana akcja',
         };
     }

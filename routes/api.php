@@ -29,7 +29,7 @@ use App\Models\Traffic;
  *
  * Security Note:
  * - Admin panel IS protected with rate limiting (routes/web.php:40)
- * - These endpoints are intentionally public (per CLAUDE.md design)
+ * - These endpoints are intentionally public 
  */
 Route::get('/traffic', function (Request $request) {
     return Traffic::latest()->get()->value('value');

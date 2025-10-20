@@ -205,6 +205,24 @@ class RealPackageServicesSeeder extends Seeder
             'is_extra' => true,
         ]);
 
+        PackageService::create([
+            'id' => 20,
+            'name' => 'Masaż ciepłą świecą',
+            'zone' => 'odnowy',
+            'description' => 'Masaż całego ciała ciepłą świecą',
+            'duration' => 60,
+            'is_extra' => false,
+        ]);
+
+        PackageService::create([
+            'id' => 21,
+            'name' => 'Masaż ciepłą czekoladą',
+            'zone' => 'odnowy',
+            'description' => 'Masaż całego ciała ciepłą czekoladą',
+            'duration' => 60,
+            'is_extra' => false,
+        ]);
+
         // ========================================
         // PAKIET 1: Naturalna Harmonia
         // ========================================
@@ -230,11 +248,18 @@ class RealPackageServicesSeeder extends Seeder
         // PAKIET 3: Szept Miłości (dla 2 osób!)
         // ========================================
         DB::table('package_type_services')->insert([
-            ['package_type' => 3, 'service_id' => 4, 'quantity' => 2, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false], // 2x masaż
+            // Warianty masażu dla Osoby 1
+            ['package_type' => 3, 'service_id' => 20, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'osoba1_masaz', 'is_extra' => false],
+            ['package_type' => 3, 'service_id' => 21, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'osoba1_masaz', 'is_extra' => false],
+            // Warianty masażu dla Osoby 2
+            ['package_type' => 3, 'service_id' => 20, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'osoba2_masaz', 'is_extra' => false],
+            ['package_type' => 3, 'service_id' => 21, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'osoba2_masaz', 'is_extra' => false],
+            // Pozostałe usługi (wspólne)
             ['package_type' => 3, 'service_id' => 11, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
             ['package_type' => 3, 'service_id' => 10, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
+            ['package_type' => 3, 'service_id' => 10, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
             ['package_type' => 3, 'service_id' => 15, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
-            ['package_type' => 3, 'service_id' => 19, 'quantity' => 2, 'is_variant' => false, 'variant_group' => null, 'is_extra' => true], // 2x ręcznik
+            ['package_type' => 3, 'service_id' => 19, 'quantity' => 2, 'is_variant' => false, 'variant_group' => null, 'is_extra' => true],
         ]);
 
         // ========================================
@@ -274,7 +299,7 @@ class RealPackageServicesSeeder extends Seeder
             ['package_type' => 6, 'service_id' => 19, 'quantity' => 6, 'is_variant' => false, 'variant_group' => null, 'is_extra' => true], // 6x ręcznik
         ]);
 
-        $this->command->info('✅ Seeded 19 real package services');
+        $this->command->info('✅ Seeded 21 real package services');
         $this->command->info('✅ Seeded package_type_services for all 6 package types');
     }
 }

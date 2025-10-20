@@ -193,7 +193,8 @@ export default function Index({ packages, filters }: Props) {
                                 </div>
                             ) : (
                                 <>
-                                    <div className="overflow-x-auto">
+                                    {/* Desktop Table View - hidden on mobile */}
+                                    <div className="hidden md:block overflow-x-auto">
                                         <table className="min-w-full divide-y divide-gray-200">
                                             <thead className="bg-gray-50">
                                                 <tr>
@@ -269,6 +270,103 @@ export default function Index({ packages, filters }: Props) {
                                             </tbody>
                                         </table>
                                     </div>
+
+                                    {/* Mobile Card View - visible only on mobile */}
+                                    <div className="md:hidden space-y-4">
+                                        {packages.data.map((pkg) => (
+                                            <div
+                                                key={pkg.id}
+                                                className={`rounded-lg border ${
+                                                    pkg.is_fully_used
+                                                        ? 'bg-gray-100 border-gray-300'
+                                                        : 'bg-white border-gray-200'
+                                                } p-4 shadow-sm`}
+                                            >
+                                                {/* Header - ID i posiadacz */}
+                                                <div className="mb-3 pb-3 border-b border-gray-200">
+                                                    <div className="flex items-start justify-between mb-2">
+                                                        <div className="flex-1">
+                                                            <div className="text-xs font-medium text-gray-500 uppercase mb-1">
+                                                                ID Pakietu
+                                                            </div>
+                                                            <div className="text-sm font-mono font-semibold text-gray-900">
+                                                                {pkg.package_id}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs font-medium text-gray-500 uppercase mb-1">
+                                                            Posiadacz
+                                                        </div>
+                                                        <div className="text-base font-semibold text-gray-900">
+                                                            {pkg.owner_name}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Typ pakietu */}
+                                                <div className="mb-3">
+                                                    <div className="text-xs font-medium text-gray-500 uppercase mb-1">
+                                                        Typ
+                                                    </div>
+                                                    <div className="text-sm text-gray-700">
+                                                        {pkg.package_type_name || `Pakiet ${pkg.package_type}`}
+                                                    </div>
+                                                </div>
+
+                                                {/* Wykorzystanie */}
+                                                <div className="mb-3">
+                                                    <div className="text-xs font-medium text-gray-500 uppercase mb-2">
+                                                        Wykorzystanie
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        <div className="flex-1 bg-gray-200 rounded-full h-3 mr-3">
+                                                            <div
+                                                                className={`h-3 rounded-full transition-all duration-300 ${
+                                                                    pkg.is_fully_used ? 'bg-green-600' : 'bg-blue-600'
+                                                                }`}
+                                                                style={{ width: `${pkg.usage_percentage}%` }}
+                                                            ></div>
+                                                        </div>
+                                                        <span className="text-sm font-semibold text-gray-900 min-w-[45px] text-right">
+                                                            {pkg.usage_percentage}%
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Utworzono przez */}
+                                                <div className="mb-3">
+                                                    <div className="text-xs font-medium text-gray-500 uppercase mb-1">
+                                                        Utworzono przez
+                                                    </div>
+                                                    <div className="text-sm text-gray-700">
+                                                        {pkg.created_by}
+                                                    </div>
+                                                </div>
+
+                                                {/* Data utworzenia */}
+                                                <div className="mb-4">
+                                                    <div className="text-xs font-medium text-gray-500 uppercase mb-1">
+                                                        Data utworzenia
+                                                    </div>
+                                                    <div className="text-sm text-gray-700">
+                                                        {pkg.created_at}
+                                                    </div>
+                                                </div>
+
+                                                {/* Akcje */}
+                                                <div className="pt-3 border-t border-gray-200">
+                                                    <Link
+                                                        href={route('packages.show', pkg.id)}
+                                                        className="block w-full text-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 active:bg-indigo-800 transition-colors"
+                                                    >
+                                                        Zobacz szczegóły
+                                                    </Link>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
 
                                     {/* Pagination Controls */}
                                     {packages.last_page > 1 && (

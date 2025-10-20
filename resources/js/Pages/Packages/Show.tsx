@@ -4,6 +4,7 @@ import { PackageWithUsages, PackageServiceUsage } from '@/types/package';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import VariantServiceGroup from '@/Components/VariantServiceGroup';
+import PersonServiceSelector from '@/Components/PersonServiceSelector';
 
 interface Props extends PageProps {
     package: PackageWithUsages;
@@ -18,6 +19,7 @@ export default function Show({ auth, package: pkg, flash }: Props) {
     const [pendingServiceName, setPendingServiceName] = useState<string>('');
     const [isEditingNotes, setIsEditingNotes] = useState(false);
     const [isEditingOwner, setIsEditingOwner] = useState(false);
+    const [isEditingGuestCount, setIsEditingGuestCount] = useState(false);
     const [isToggling, setIsToggling] = useState<number | null>(null); // Track which service is being toggled
 
     const { data: notesData, setData: setNotesData, patch: patchNotes, processing: processingNotes } = useForm({
@@ -26,6 +28,10 @@ export default function Show({ auth, package: pkg, flash }: Props) {
 
     const { data: ownerData, setData: setOwnerData, patch: patchOwner, processing: processingOwner } = useForm({
         owner_name: pkg.owner_name || '',
+    });
+
+    const { data: guestCountData, setData: setGuestCountData, patch: patchGuestCount, processing: processingGuestCount } = useForm({
+        guest_count: pkg.guest_count || '',
     });
 
     const handleToggleUsage = (usage: PackageServiceUsage) => {
@@ -111,6 +117,20 @@ export default function Show({ auth, package: pkg, flash }: Props) {
         setIsEditingOwner(false);
     };
 
+    const handleSaveGuestCount = () => {
+        patchGuestCount(route('packages.update-guest-count', pkg.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsEditingGuestCount(false);
+            }
+        });
+    };
+
+    const handleCancelEditGuestCount = () => {
+        setGuestCountData('guest_count', pkg.guest_count || '');
+        setIsEditingGuestCount(false);
+    };
+
     const renderServiceList = (services: PackageServiceUsage[], title: string, icon: string) => {
         if (!services || services.length === 0) {
             return null;
@@ -122,13 +142,27 @@ export default function Show({ auth, package: pkg, flash }: Props) {
 
         services.forEach((service) => {
             if (service.variant_group) {
-                if (!variantGroups[service.variant_group]) {
-                    variantGroups[service.variant_group] = [];
+                // For "osoba1_masaz", "osoba2_masaz" → keep full group name (don't strip suffix)
+                // For "odnowa_a", "odnowa_b" → group together as "odnowa"
+                const isPersonGroup = service.variant_group.startsWith('osoba');
+                const baseGroupName = isPersonGroup
+                    ? service.variant_group  // Keep full: "osoba1_masaz", "osoba2_masaz"
+                    : service.variant_group.replace(/_[a-z]$/i, ''); // Strip suffix: "odnowa"
+
+                if (!variantGroups[baseGroupName]) {
+                    variantGroups[baseGroupName] = [];
                 }
-                variantGroups[service.variant_group].push(service);
+                variantGroups[baseGroupName].push(service);
             } else {
                 regularServices.push(service);
             }
+        });
+
+        // Sort services within each variant group by variant_group name (odnowa_a before odnowa_b)
+        Object.keys(variantGroups).forEach(groupName => {
+            variantGroups[groupName].sort((a, b) =>
+                (a.variant_group || '').localeCompare(b.variant_group || '')
+            );
         });
 
         return (
@@ -139,15 +173,33 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                 </h3>
                 <div className="space-y-3">
                     {/* Render variant groups first */}
-                    {Object.entries(variantGroups).map(([groupName, groupServices]) => (
-                        <VariantServiceGroup
-                            key={groupName}
-                            variantGroup={groupName}
-                            services={groupServices}
-                            isToggling={isToggling}
-                            onToggle={handleToggleUsage}
-                        />
-                    ))}
+                    {Object.entries(variantGroups).map(([groupName, groupServices]) => {
+                        // Use PersonServiceSelector for "osobaX_*" groups (Pakiet 6: Szept Miłości)
+                        const isPersonGroup = groupName.startsWith('osoba');
+
+                        if (isPersonGroup) {
+                            return (
+                                <PersonServiceSelector
+                                    key={groupName}
+                                    variantGroup={groupName}
+                                    services={groupServices}
+                                    isToggling={isToggling}
+                                    onToggle={handleToggleUsage}
+                                />
+                            );
+                        }
+
+                        // Use VariantServiceGroup for other variants (Pakiet 4)
+                        return (
+                            <VariantServiceGroup
+                                key={groupName}
+                                variantGroup={groupName}
+                                services={groupServices}
+                                isToggling={isToggling}
+                                onToggle={handleToggleUsage}
+                            />
+                        );
+                    })}
 
                     {/* Then render regular services */}
                     {regularServices.map((usage) => (
@@ -208,7 +260,10 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                             href={route('packages.pdf', pkg.id)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:border-indigo-900 focus:ring ring-indigo-300 disabled:opacity-25 transition ease-in-out duration-150"
+                            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest focus:outline-none focus:ring transition ease-in-out duration-150"
+                            style={{ backgroundColor: '#1356A3' }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0f4580'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1356A3'}
                         >
                             📄 Pobierz PDF
                         </a>
@@ -432,7 +487,7 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                                             Klient może wybrać jeden z poniższych wariantów. Dodaj wybraną usługę klikając przycisk "Dodaj".
                                         </p>
 
-                                        {Object.entries(pkg.variant_services).map(([groupName, services]: [string, any[]]) => (
+                                        {Object.entries(pkg.variant_services).map(([groupName, services]) => (
                                             <div key={groupName} className="mb-4 last:mb-0">
                                                 <div className="font-semibold text-gray-700 mb-2 text-sm">
                                                     Grupa: {groupName}
@@ -475,6 +530,88 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                                                 </div>
                                             </div>
                                         ))}
+                                    </div>
+                                </>
+                            )}
+
+                            {/* Guest Count Section - Only for package types 4-6 */}
+                            {pkg.package_type >= 4 && (
+                                <>
+                                    <div className="border-t-2 border-gray-300 my-8"></div>
+
+                                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                                            <span className="mr-2">👥</span>
+                                            Liczba osób korzystających z pakietu
+                                        </h3>
+
+                                        <div className="bg-white rounded-lg p-4 border border-blue-200">
+                                            {isEditingGuestCount ? (
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                            Liczba osób
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            max="50"
+                                                            value={guestCountData.guest_count}
+                                                            onChange={(e) => setGuestCountData('guest_count', e.target.value)}
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                            placeholder="Wpisz liczbę osób..."
+                                                            disabled={processingGuestCount}
+                                                        />
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={handleSaveGuestCount}
+                                                            disabled={processingGuestCount}
+                                                            className="px-4 py-2 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                            style={{ backgroundColor: '#1356A3' }}
+                                                            onMouseEnter={(e) => !processingGuestCount && (e.currentTarget.style.backgroundColor = '#0f4580')}
+                                                            onMouseLeave={(e) => !processingGuestCount && (e.currentTarget.style.backgroundColor = '#1356A3')}
+                                                        >
+                                                            {processingGuestCount ? 'Zapisywanie...' : 'Zapisz'}
+                                                        </button>
+                                                        <button
+                                                            onClick={handleCancelEditGuestCount}
+                                                            disabled={processingGuestCount}
+                                                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                        >
+                                                            Anuluj
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex justify-between items-center">
+                                                    <div>
+                                                        {pkg.guest_count ? (
+                                                            <div className="text-gray-900 font-medium">
+                                                                👥 {pkg.guest_count} {pkg.guest_count === 1 ? 'osoba' : pkg.guest_count < 5 ? 'osoby' : 'osób'}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="text-gray-500 italic">
+                                                                Nie określono liczby osób
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setIsEditingGuestCount(true)}
+                                                        className="px-4 py-2 rounded-lg transition-colors"
+                                                        style={{ backgroundColor: '#E3F2FD', color: '#1356A3' }}
+                                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#BBDEFB'}
+                                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E3F2FD'}
+                                                    >
+                                                        {pkg.guest_count ? 'Edytuj' : 'Dodaj liczbę osób'}
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="mt-3 text-xs text-gray-500 italic text-center">
+                                            ℹ️ To pole nie wpływa na procent realizacji pakietu - służy tylko jako informacja dla personelu
+                                        </div>
                                     </div>
                                 </>
                             )}
@@ -542,11 +679,8 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                                     <div className="bg-gray-50 rounded-lg border-2 border-gray-300 overflow-hidden">
                                         <div className="bg-gray-100 px-4 py-3 border-b border-gray-300">
                                             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                                                <span className="mr-2">📜</span>
-                                                Historia edycji
-                                                <span className="ml-2 text-sm font-normal text-gray-500">
-                                                    (ostatnie 40 akcji)
-                                                </span>
+                                                <span className="mr-2">✅</span>
+                                                Akcje
                                             </h3>
                                         </div>
 

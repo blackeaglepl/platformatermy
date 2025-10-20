@@ -32,9 +32,10 @@ class AppServiceProvider extends ServiceProvider
         // Enable SQLite WAL mode for better concurrency (fixes database lock errors)
         // WAL (Write-Ahead Logging) allows concurrent reads while writing
         // Only applied to SQLite, MySQL/PostgreSQL ignore this
-        if (config('database.default') === 'sqlite') {
-            DB::statement('PRAGMA journal_mode=WAL;');
-            DB::statement('PRAGMA busy_timeout=5000;'); // Wait up to 5s if locked
-        }
+        // TEMPORARY DISABLED: Uncomment when database permissions are fixed
+        // if (config('database.default') === 'sqlite') {
+        //     DB::statement('PRAGMA journal_mode=WAL;');
+        //     DB::statement('PRAGMA busy_timeout=5000;'); // Wait up to 5s if locked
+        // }
     }
 }

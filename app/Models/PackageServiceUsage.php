@@ -14,6 +14,8 @@ class PackageServiceUsage extends Model
     protected $fillable = [
         'package_id',
         'service_id',
+        'variant_group',
+        'instance_number',
         'used_at',
         'marked_by',
         'notes',

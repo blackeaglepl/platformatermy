@@ -81,10 +81,10 @@ class PackagePdfService
 
         // === POLE 3: POSIADACZ (pole na dole po prawej) ===
         // Pole "Posiadacz" około x=110mm, y=74mm, szerokość ~100mm
-        // Używamy custom_id (to pole zawiera imię i nazwisko klienta)
+        // Używamy owner_name (to pole zawiera imię i nazwisko klienta)
         $this->pdf->SetFont('dejavusans', 'B', 13);
         $this->pdf->SetXY(110, 74);
-        $this->pdf->Cell(100, 6, mb_strtoupper($package->custom_id ?? 'BRAK DANYCH', 'UTF-8'), 0, 0, 'C', false);
+        $this->pdf->Cell(100, 6, mb_strtoupper($package->owner_name ?? 'BRAK DANYCH', 'UTF-8'), 0, 0, 'C', false);
     }
 
     protected function createPage2(Package $package): void

@@ -31,7 +31,10 @@
       "Bash(for i in {1..6})",
       "Bash(do echo \"Pakiet $i:\")",
       "Bash(ls:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(for i in {1..10})",
+      "Bash(do echo \"Próba $i:\")",
+      "Bash(MSYS_NO_PATHCONV=1 docker logs platformapakiety-laravel.test-1)"
     ],
     "deny": [],
     "ask": []

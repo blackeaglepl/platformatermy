@@ -45,6 +45,7 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function () {
     Route::get('/packages/{package}/pdf', [PackageController::class, 'generatePdf'])->name('packages.pdf');
     Route::patch('/packages/{package}/owner', [PackageController::class, 'updateOwner'])->name('packages.update-owner');
     Route::patch('/packages/{package}/notes', [PackageController::class, 'updateNotes'])->name('packages.update-notes');
+    Route::patch('/packages/{package}/guest-count', [PackageController::class, 'updateGuestCount'])->name('packages.update-guest-count');
 
     // Service usage routes
     Route::post('/package-usage/{usage}/toggle', [PackageServiceUsageController::class, 'toggle'])->name('package-usage.toggle');

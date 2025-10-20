@@ -14,7 +14,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [1/5] Starting Laravel Sail containers...
+echo [1/6] Starting Laravel Sail containers...
 docker compose up -d
 
 if errorlevel 1 (
@@ -24,19 +24,24 @@ if errorlevel 1 (
 )
 
 echo.
-echo [2/5] Waiting for containers to be ready...
+echo [2/6] Waiting for containers to be ready...
 timeout /t 10 /nobreak >nul
 
 echo.
-echo [3/5] Checking npm dependencies...
-docker exec platformapakiety-laravel.test-1 npm install --silent
+echo [3/6] Checking npm dependencies...
+docker exec platformapakiety-laravel.test-1 bash -c "[ -d node_modules ] && echo 'Dependencies OK - skipping npm install' || npm install --prefer-offline"
 
 echo.
-echo [4/5] Stopping any existing Vite processes...
+echo [4/6] Fixing database permissions...
+docker exec platformapakiety-laravel.test-1 bash -c "chmod 664 /var/www/html/database/database.sqlite 2>/dev/null && chmod 775 /var/www/html/database 2>/dev/null && chown -R sail:sail /var/www/html/database 2>/dev/null" >nul 2>&1
+echo Database permissions fixed
+
+echo.
+echo [5/6] Stopping any existing Vite processes...
 docker exec platformapakiety-laravel.test-1 pkill -f vite 2>nul || echo No existing Vite found
 
 echo.
-echo [5/5] Starting Vite dev server...
+echo [6/6] Starting Vite dev server...
 timeout /t 2 /nobreak >nul
 
 REM Start Vite in detached mode

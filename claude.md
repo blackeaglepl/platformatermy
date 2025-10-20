@@ -356,7 +356,7 @@ Usługi:
 CREATE TABLE packages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     package_id VARCHAR(255) UNIQUE NOT NULL,  -- automatycznie generowane (YYYYMMDD-XX)
-    custom_id VARCHAR(255) NOT NULL,          -- imię i nazwisko (np. "Jan Kowalski")
+    owner_name VARCHAR(255) NOT NULL,         -- imię i nazwisko (np. "Jan Kowalski")
     package_type INTEGER NOT NULL,            -- 1-6
     created_by INTEGER,                       -- user_id
     created_at TIMESTAMP,
@@ -367,7 +367,7 @@ CREATE TABLE packages (
 ```
 
 **⚠️ WAŻNA ZMIANA (2025-10-16):**
-- `custom_id` **NIE MA** constraint UNIQUE - ta sama osoba może mieć wiele pakietów
+- `owner_name` **NIE MA** constraint UNIQUE - ta sama osoba może mieć wiele pakietów
 - `package_id` jest unikalny i wystarcza do identyfikacji
 - Brak brzydkich suffixów (`_2`, `_3`) w PDF i UI
 
@@ -593,16 +593,16 @@ Szczegółowe zarządzanie zadaniami i postępami znajduje się w **[task.md](ta
 - ❌ Istniejące migracje w `database/migrations/`
 
 ### ⚠️ Ważne ustalenia dotyczące nazewnictwa pól
-**KRYTYCZNE:** W bazie danych pole zawierające imię i nazwisko posiadacza nazywa się **`custom_id`**, NIE `owner_name`!
+**KRYTYCZNE:** W bazie danych pole zawierające imię i nazwisko posiadacza nazywa się **`owner_name`**!
 
 ```
 packages table:
 - package_id (VARCHAR) - automatycznie generowane ID (YYYYMMDD-XX)
-- custom_id (VARCHAR)  - imię i nazwisko posiadacza (np. "Jan Kowalski")
+- owner_name (VARCHAR) - imię i nazwisko posiadacza (np. "Jan Kowalski")
 - package_type (INT)   - typ pakietu (1-6)
 ```
 
-W kodzie backend zawsze używaj `custom_id` do pracy z nazwiskiem klienta!
+W kodzie backend zawsze używaj `owner_name` do pracy z nazwiskiem klienta!
 
 ---
 
@@ -693,7 +693,7 @@ $this->pdf->Cell(50, 5, $dateText, 0, 0, 'C', false);
 // Dodaj imię i nazwisko (różowe pole)
 $this->pdf->SetFont('dejavusans', 'B', 13);
 $this->pdf->SetXY(100, 56);
-$this->pdf->Cell(100, 6, mb_strtoupper($package->custom_id, 'UTF-8'), 0, 0, 'C', false);
+$this->pdf->Cell(100, 6, mb_strtoupper($package->owner_name, 'UTF-8'), 0, 0, 'C', false);
 ```
 
 **Strona 2 - statyczne tło:**
@@ -1103,7 +1103,7 @@ Zawiera:
 
 ### Opcjonalne rozszerzenia (do przyszłej implementacji)
 
-#### Opcja A: Szyfrowanie wrażliwych danych (custom_id)
+#### Opcja A: Szyfrowanie wrażliwych danych (owner_name)
 
 **Kiedy wdrożyć:** Jeśli wymagane przez RODO/audyt
 
@@ -1111,7 +1111,7 @@ Zawiera:
 ```php
 // app/Models/Package.php
 protected $casts = [
-    'custom_id' => 'encrypted',  // Automatyczne AES-256 encryption
+    'owner_name' => 'encrypted',  // Automatyczne AES-256 encryption
 ];
 ```
 
@@ -1205,7 +1205,7 @@ SELECT
     pl.created_at,
     u.name as user,
     pl.ip_address,
-    p.custom_id as package_owner,
+    p.owner_name as package_owner,
     pl.action_type
 FROM package_logs pl
 JOIN users u ON pl.user_id = u.id

@@ -31,6 +31,7 @@ export interface Package {
     usage_percentage: number;
     is_fully_used: boolean;
     notes: string | null;
+    guest_count: number | null;  // Number of guests (only for package types 4-6: Kobiecy Chill, Wspólna Regeneracja, Impreza Urodzinowa) - informational only, does NOT affect usage percentage
 }
 
 export interface PackageLog {
@@ -49,6 +50,7 @@ export interface PackageWithUsages extends Package {
     };
     extra_usages: PackageServiceUsage[];
     logs: PackageLog[];
+    variant_services?: Record<string, PackageService[]>; // Optional - for future variant functionality
 }
 
 export interface PackageType {
