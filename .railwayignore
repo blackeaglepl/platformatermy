@@ -6,6 +6,10 @@ tests/
 *.md
 !RAILWAY_DEPLOYMENT.md
 database/database.sqlite
+
+# Prevent Railway from using Docker (we want Nixpacks)
+docker-compose.yml
+Dockerfile
 storage/logs/*.log
 storage/framework/cache/*
 storage/framework/sessions/*
