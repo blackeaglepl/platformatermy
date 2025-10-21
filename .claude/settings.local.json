@@ -38,7 +38,9 @@
       "Bash(git commit:*)",
       "Bash(git tag:*)",
       "Bash(railway login:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(railway logs:*)",
+      "Bash(railway shell:*)"
     ],
     "deny": [],
     "ask": []
