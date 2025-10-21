@@ -1,50 +1,110 @@
 # 🔐 Skrypty zabezpieczeń bazy danych
 
-## 📦 Dostępne skrypty
+## 🎯 Szybki start
 
-### 1. backup-database.sh
-Automatyczny backup bazy danych z szyfrowaniem GPG (AES-256).
-
-**Użycie:**
+### Development (SQLite w Docker)
 ```bash
-# Ręczny backup
-docker exec platformapakiety-laravel.test-1 bash /var/www/html/scripts/backup-database.sh
+# Backup
+docker exec platformapakiety-laravel.test-1 bash /var/www/html/scripts/backup-database-universal.sh
 
-# Lub z hosta (Windows Git Bash)
-docker exec platformapakiety-laravel.test-1 bash /var/www/html/scripts/backup-database.sh
+# Restore
+docker exec -it platformapakiety-laravel.test-1 bash /var/www/html/scripts/restore-database-universal.sh
 ```
 
-**Co robi:**
-- Kopiuje `database/database.sqlite`
-- Szyfruje kopię za pomocą GPG (AES-256)
-- Zapisuje zaszyfrowany plik do `storage/backups/db_backup_YYYYMMDD_HHMMSS.sqlite.gpg`
-- Usuwa niezaszyfrowaną kopię
-- Czyści backupy starsze niż 30 dni
+### Production (MySQL na serwerze)
+```bash
+# Backup
+ssh user@server "cd /var/www/html && bash scripts/backup-database-universal.sh"
 
-**Wymagania:**
-- Zmienna środowiskowa `BACKUP_PASSWORD` (ustawiona w docker-compose.yml)
+# Restore
+ssh user@server "cd /var/www/html && bash scripts/restore-database-universal.sh"
+```
+
+**⭐ Dla production (MySQL) zobacz pełny przewodnik:** [BACKUP_PRODUCTION.md](../BACKUP_PRODUCTION.md)
 
 ---
 
-### 2. restore-database.sh
-Odzyskiwanie bazy danych z zaszyfrowanego backupu.
+## 📦 Dostępne skrypty
+
+### 🆕 backup-database-universal.sh (ZALECANE)
+**Status:** ✅ Wspiera SQLite (dev) + MySQL (production)
+
+Automatyczny backup z auto-detekcją typu bazy danych.
+
+**Użycie - Development:**
+```bash
+docker exec platformapakiety-laravel.test-1 bash /var/www/html/scripts/backup-database-universal.sh
+```
+
+**Użycie - Production:**
+```bash
+ssh user@server
+cd /var/www/html
+bash scripts/backup-database-universal.sh
+```
+
+**Jak działa:**
+1. Czyta `DB_CONNECTION` z `.env` (sqlite/mysql)
+2. **Jeśli SQLite:** Kopiuje `database.sqlite` → szyfruje GPG
+3. **Jeśli MySQL:** `mysqldump` → szyfruje GPG
+4. Zapisuje do `storage/backups/db_backup_YYYYMMDD_HHMMSS.[sqlite|sql].gpg`
+5. Czyści backupy starsze niż 30 dni
+
+**Wymagania:**
+- Zmienna `BACKUP_PASSWORD` w `.env`
+- **Dla MySQL:** `mysqldump` zainstalowane (`apt-get install mysql-client`)
+
+---
+
+### 🆕 restore-database-universal.sh (ZALECANE)
+**Status:** ✅ Wspiera SQLite (dev) + MySQL (production)
+
+Restore z auto-detekcją formatu backupu.
+
+**Użycie - Development:**
+```bash
+docker exec -it platformapakiety-laravel.test-1 bash /var/www/html/scripts/restore-database-universal.sh
+```
+
+**Użycie - Production:**
+```bash
+ssh user@server
+cd /var/www/html
+bash scripts/restore-database-universal.sh
+```
+
+**Jak działa:**
+1. Wykrywa typ backupu z rozszerzenia (`.sqlite.gpg` / `.sql.gpg`)
+2. Odszyfrowuje GPG
+3. **Jeśli SQLite:** Weryfikuje integralność → kopiuje plik
+4. **Jeśli MySQL:** Tworzy pre-restore backup → importuje SQL
+5. Wymaga potwierdzenia: `yes`
+
+**⚠️ MySQL:** Restore **DROP wszystkich tabel** w bazie!
+
+---
+
+### backup-database.sh (Legacy - tylko SQLite)
+**Status:** ⚠️ Deprecated - używaj `backup-database-universal.sh`
+
+Stary skrypt tylko dla SQLite.
 
 **Użycie:**
 ```bash
-# Restore z najnowszego backupu
-docker exec -it platformapakiety-laravel.test-1 bash /var/www/html/scripts/restore-database.sh
-
-# Restore z konkretnego backupu
-docker exec -it platformapakiety-laravel.test-1 bash /var/www/html/scripts/restore-database.sh db_backup_20251016_030000.sqlite.gpg
+docker exec platformapakiety-laravel.test-1 bash /var/www/html/scripts/backup-database.sh
 ```
 
-**Co robi:**
-- Dekryptuje wybrany backup
-- Tworzy kopię zapasową obecnej bazy (`.before_restore_TIMESTAMP`)
-- Przywraca bazę z backupu
-- Weryfikuje integralność danych
+---
 
-**⚠️ UWAGA:** Wymaga potwierdzenia (wpisz `yes`)
+### restore-database.sh (Legacy - tylko SQLite)
+**Status:** ⚠️ Deprecated - używaj `restore-database-universal.sh`
+
+Stary skrypt tylko dla SQLite.
+
+**Użycie:**
+```bash
+docker exec -it platformapakiety-laravel.test-1 bash /var/www/html/scripts/restore-database.sh
+```
 
 ---
 

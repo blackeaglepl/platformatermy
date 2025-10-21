@@ -19,6 +19,7 @@ class PackageServiceUsage extends Model
         'used_at',
         'marked_by',
         'notes',
+        'is_visible',
     ];
 
     protected $casts = [

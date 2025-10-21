@@ -180,6 +180,7 @@ class PackageController extends Controller
                         'used_at' => null,
                         'marked_by' => null,
                         'notes' => null,
+                        'is_visible' => $assignment->is_visible ?? true,
                     ]);
                 }
             }
@@ -228,11 +229,11 @@ class PackageController extends Controller
 
         // Separate regular services and extra services
         $regularUsages = $package->usages->filter(function ($usage) {
-            return !$usage->service->is_extra;
+            return !$usage->service->is_extra && $usage->is_visible;
         });
 
         $extraUsages = $package->usages->filter(function ($usage) {
-            return $usage->service->is_extra;
+            return $usage->service->is_extra && $usage->is_visible;
         });
 
         // Group regular usages by zone

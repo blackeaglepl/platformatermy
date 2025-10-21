@@ -245,21 +245,21 @@ class RealPackageServicesSeeder extends Seeder
         // PAKIET 1: Naturalna Harmonia
         // ========================================
         DB::table('package_type_services')->insert([
-            ['package_type' => 1, 'service_id' => 1, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
-            ['package_type' => 1, 'service_id' => 2, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
-            ['package_type' => 1, 'service_id' => 9, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
-            ['package_type' => 1, 'service_id' => 13, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
-            ['package_type' => 1, 'service_id' => 19, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => true],
+            ['package_type' => 1, 'service_id' => 1, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 1, 'service_id' => 2, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 1, 'service_id' => 9, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 1, 'service_id' => 13, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 1, 'service_id' => 19, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => true, 'is_visible' => true],
         ]);
 
         // ========================================
         // PAKIET 2: Termalna Ulga
         // ========================================
         DB::table('package_type_services')->insert([
-            ['package_type' => 2, 'service_id' => 3, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
-            ['package_type' => 2, 'service_id' => 10, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
-            ['package_type' => 2, 'service_id' => 14, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
-            ['package_type' => 2, 'service_id' => 19, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => true],
+            ['package_type' => 2, 'service_id' => 3, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 2, 'service_id' => 10, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 2, 'service_id' => 14, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 2, 'service_id' => 19, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => true, 'is_visible' => true],
         ]);
 
         // ========================================
@@ -267,17 +267,17 @@ class RealPackageServicesSeeder extends Seeder
         // ========================================
         DB::table('package_type_services')->insert([
             // Warianty masażu dla Osoby 1
-            ['package_type' => 3, 'service_id' => 20, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'osoba1_masaz', 'is_extra' => false],
-            ['package_type' => 3, 'service_id' => 21, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'osoba1_masaz', 'is_extra' => false],
+            ['package_type' => 3, 'service_id' => 20, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'osoba1_masaz', 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 3, 'service_id' => 21, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'osoba1_masaz', 'is_extra' => false, 'is_visible' => true],
             // Warianty masażu dla Osoby 2
-            ['package_type' => 3, 'service_id' => 20, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'osoba2_masaz', 'is_extra' => false],
-            ['package_type' => 3, 'service_id' => 21, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'osoba2_masaz', 'is_extra' => false],
+            ['package_type' => 3, 'service_id' => 20, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'osoba2_masaz', 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 3, 'service_id' => 21, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'osoba2_masaz', 'is_extra' => false, 'is_visible' => true],
             // Pozostałe usługi (wspólne)
-            ['package_type' => 3, 'service_id' => 11, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
-            ['package_type' => 3, 'service_id' => 10, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
-            ['package_type' => 3, 'service_id' => 10, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
-            ['package_type' => 3, 'service_id' => 15, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
-            ['package_type' => 3, 'service_id' => 19, 'quantity' => 2, 'is_variant' => false, 'variant_group' => null, 'is_extra' => true],
+            ['package_type' => 3, 'service_id' => 11, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 3, 'service_id' => 10, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 3, 'service_id' => 10, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 3, 'service_id' => 15, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 3, 'service_id' => 19, 'quantity' => 2, 'is_variant' => false, 'variant_group' => null, 'is_extra' => true, 'is_visible' => true],
         ]);
 
         // ========================================
@@ -285,40 +285,40 @@ class RealPackageServicesSeeder extends Seeder
         // ========================================
         DB::table('package_type_services')->insert([
             // Wariant A - masaż relaksacyjny + zabieg twarzy
-            ['package_type' => 4, 'service_id' => 5, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'odnowa_a', 'is_extra' => false],
-            ['package_type' => 4, 'service_id' => 2, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'odnowa_a', 'is_extra' => false],
+            ['package_type' => 4, 'service_id' => 5, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'odnowa_a', 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 4, 'service_id' => 2, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'odnowa_a', 'is_extra' => false, 'is_visible' => true],
             // Wariant B - masaż shea + peeling
-            ['package_type' => 4, 'service_id' => 6, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'odnowa_b', 'is_extra' => false],
-            ['package_type' => 4, 'service_id' => 7, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'odnowa_b', 'is_extra' => false],
+            ['package_type' => 4, 'service_id' => 6, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'odnowa_b', 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 4, 'service_id' => 7, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'odnowa_b', 'is_extra' => false, 'is_visible' => true],
             // Pozostałe usługi
-            ['package_type' => 4, 'service_id' => 12, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
-            ['package_type' => 4, 'service_id' => 9, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
-            ['package_type' => 4, 'service_id' => 16, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
-            ['package_type' => 4, 'service_id' => 19, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => true],
+            ['package_type' => 4, 'service_id' => 12, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 4, 'service_id' => 9, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 4, 'service_id' => 16, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 4, 'service_id' => 19, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => true, 'is_visible' => true],
         ]);
 
         // ========================================
         // PAKIET 5: Wspólna Regeneracja (dla 2 osób!)
         // ========================================
         DB::table('package_type_services')->insert([
-            // Wariant A - masaż klasyczny (dla 2 osób)
-            ['package_type' => 5, 'service_id' => 22, 'quantity' => 2, 'is_variant' => true, 'variant_group' => 'masaz_a', 'is_extra' => false],
-            // Wariant B - masaż ciepłymi olejkami (dla 2 osób)
-            ['package_type' => 5, 'service_id' => 23, 'quantity' => 2, 'is_variant' => true, 'variant_group' => 'masaz_b', 'is_extra' => false],
+            // Wariant A - masaż klasyczny (1x)
+            ['package_type' => 5, 'service_id' => 22, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'masaz_a', 'is_extra' => false, 'is_visible' => true],
+            // Wariant B - masaż ciepłymi olejkami (1x)
+            ['package_type' => 5, 'service_id' => 23, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'masaz_b', 'is_extra' => false, 'is_visible' => true],
             // Pozostałe usługi
-            ['package_type' => 5, 'service_id' => 10, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
-            ['package_type' => 5, 'service_id' => 16, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false], // 1x voucher (zmienione z 2x)
-            ['package_type' => 5, 'service_id' => 19, 'quantity' => 2, 'is_variant' => false, 'variant_group' => null, 'is_extra' => true], // 2x ręcznik
+            ['package_type' => 5, 'service_id' => 10, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 5, 'service_id' => 16, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true], // 1x voucher
+            ['package_type' => 5, 'service_id' => 19, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => true, 'is_visible' => true], // 1x ręcznik (zmienione z 2x)
         ]);
 
         // ========================================
         // PAKIET 6: Impreza Urodzinowa (dla 6 dzieci!)
         // ========================================
         DB::table('package_type_services')->insert([
-            ['package_type' => 6, 'service_id' => 10, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false], // Wejście dla całej grupy
-            ['package_type' => 6, 'service_id' => 17, 'quantity' => 2, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false], // 2x lemoniada
-            ['package_type' => 6, 'service_id' => 18, 'quantity' => 3, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false], // 3x pizza
-            ['package_type' => 6, 'service_id' => 19, 'quantity' => 6, 'is_variant' => false, 'variant_group' => null, 'is_extra' => true], // 6x ręcznik
+            ['package_type' => 6, 'service_id' => 10, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true], // Wejście dla całej grupy
+            ['package_type' => 6, 'service_id' => 17, 'quantity' => 2, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true], // 2x lemoniada
+            ['package_type' => 6, 'service_id' => 18, 'quantity' => 3, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true], // 3x pizza
+            ['package_type' => 6, 'service_id' => 19, 'quantity' => 6, 'is_variant' => false, 'variant_group' => null, 'is_extra' => true, 'is_visible' => false], // 6x ręcznik - UKRYTY!
         ]);
 
         $this->command->info('✅ Seeded 23 real package services');

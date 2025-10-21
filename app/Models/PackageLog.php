@@ -67,6 +67,7 @@ class PackageLog extends Model
             'extra_service_marked' => "Zaznaczono usługę dodatkową: {$this->details['service_name']}",
             'extra_service_unmarked' => "Odznaczono usługę dodatkową: {$this->details['service_name']}",
             'variant_service_selected' => "Wybrano wariant: {$this->details['service_name']} ({$this->details['variant_group']})",
+            'variant_service_unmarked' => "Odznaczono wariant ({$this->details['variant_group']})",
             'pdf_generated' => 'Wygenerowano PDF',
             'owner_updated' => "Zmieniono posiadacza z '{$this->details['old_value']}' na '{$this->details['new_value']}'",
             'notes_updated' => 'Zaktualizowano uwagi',

@@ -128,9 +128,18 @@ PlatformaPakiety/
 
 ## 📝 Dokumentacja
 
+### Podstawowe
 - **[SETUP.md](SETUP.md)** - 🚀 **INSTRUKCJA URUCHAMIANIA** (START TUTAJ!)
 - **[CLAUDE.md](CLAUDE.md)** - Pełna dokumentacja projektu
 - **[task.md](task.md)** - Zarządzanie zadaniami i progress tracking
+
+### Backupy i bezpieczeństwo
+- **[BACKUP_QUICK_GUIDE.md](BACKUP_QUICK_GUIDE.md)** - ⚡ **Szybki przewodnik backupów** (najczęstsze komendy)
+- **[BACKUP_PRODUCTION.md](BACKUP_PRODUCTION.md)** - 🔐 **Przewodnik MySQL dla production**
+- **[scripts/README.md](scripts/README.md)** - 📦 Dokumentacja skryptów backup/restore
+
+### Deployment
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - 🚀 Wdrożenie na production (WinSCP, SSH)
 
 ---
 

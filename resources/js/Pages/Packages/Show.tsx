@@ -17,6 +17,7 @@ export default function Show({ auth, package: pkg, flash }: Props) {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [pendingUsageId, setPendingUsageId] = useState<number | null>(null);
     const [pendingServiceName, setPendingServiceName] = useState<string>('');
+    const [pendingVariant, setPendingVariant] = useState<{ variantGroup: string; services: PackageServiceUsage[] } | null>(null);
     const [isEditingNotes, setIsEditingNotes] = useState(false);
     const [isEditingOwner, setIsEditingOwner] = useState(false);
     const [isEditingGuestCount, setIsEditingGuestCount] = useState(false);
@@ -87,6 +88,43 @@ export default function Show({ auth, package: pkg, flash }: Props) {
         setShowConfirmModal(false);
         setPendingUsageId(null);
         setPendingServiceName('');
+        setPendingVariant(null);
+    };
+
+    const handleVariantUnmarkConfirm = (variantServices: PackageServiceUsage[]) => {
+        // Get variant group from first service
+        const variantGroup = variantServices[0]?.variant_group || '';
+        const serviceNames = variantServices.map(s => s.service_name).join(', ');
+
+        setPendingVariant({ variantGroup, services: variantServices });
+        setPendingServiceName(serviceNames);
+        setShowConfirmModal(true);
+    };
+
+    const handleConfirmUnmarkVariant = () => {
+        if (!pendingVariant) return;
+
+        router.post(
+            route('package-usage.select-variant'),
+            {
+                package_id: pkg.id,
+                variant_group: pendingVariant.variantGroup,
+                service_ids: [], // Empty array = unmark all
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setShowConfirmModal(false);
+                    setPendingVariant(null);
+                    setPendingServiceName('');
+                },
+                onError: () => {
+                    setShowConfirmModal(false);
+                    setPendingVariant(null);
+                    setPendingServiceName('');
+                }
+            }
+        );
     };
 
     const handleSaveNotes = () => {
@@ -190,7 +228,7 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                             );
                         }
 
-                        // Use VariantServiceGroup for other variants (Pakiet 4)
+                        // Use VariantServiceGroup for other variants (Pakiet 4, 5)
                         return (
                             <VariantServiceGroup
                                 key={groupName}
@@ -198,7 +236,7 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                                 variantGroup={groupName}
                                 services={groupServices}
                                 isToggling={isToggling}
-                                onToggle={handleToggleUsage}
+                                onUnmarkConfirm={handleVariantUnmarkConfirm}
                             />
                         );
                     })}
@@ -756,7 +794,7 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                                     Anuluj
                                 </button>
                                 <button
-                                    onClick={handleConfirmUnmark}
+                                    onClick={pendingVariant ? handleConfirmUnmarkVariant : handleConfirmUnmark}
                                     className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
                                 >
                                     Tak, cofnij

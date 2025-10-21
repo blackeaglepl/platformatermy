@@ -135,9 +135,12 @@ class PackageServiceUsageController extends Controller
         $validated = $request->validate([
             'package_id' => 'required|integer|exists:packages,id',
             'variant_group' => 'required|string',
-            'service_ids' => 'required|array',
+            'service_ids' => 'nullable|array', // nullable allows empty array for unmarking
             'service_ids.*' => 'integer|exists:package_service_usage,id',
         ]);
+
+        // Ensure service_ids is an array (even if null was sent)
+        $validated['service_ids'] = $validated['service_ids'] ?? [];
 
         DB::beginTransaction();
 
@@ -176,26 +179,43 @@ class PackageServiceUsageController extends Controller
             }
 
             // Mark ONLY selected services (if any - empty array means "unmark all")
-            foreach ($validated['service_ids'] as $serviceId) {
-                $service = PackageServiceUsage::find($serviceId);
-                if ($service) {
-                    $service->update([
-                        'used_at' => now(),
-                        'marked_by' => Auth::id(),
-                    ]);
+            if (empty($validated['service_ids'])) {
+                // Log unmarking action
+                try {
+                    PackageLog::logAction(
+                        $validated['package_id'],
+                        'variant_service_unmarked',
+                        [
+                            'variant_group' => $validated['variant_group'],
+                            'services_count' => $allVariantServices->count(),
+                        ]
+                    );
+                } catch (\Exception $e) {
+                    \Log::error('Failed to log variant unmarking: ' . $e->getMessage());
+                }
+            } else {
+                // Mark and log selected services
+                foreach ($validated['service_ids'] as $serviceId) {
+                    $service = PackageServiceUsage::find($serviceId);
+                    if ($service) {
+                        $service->update([
+                            'used_at' => now(),
+                            'marked_by' => Auth::id(),
+                        ]);
 
-                    // Log the action (non-blocking)
-                    try {
-                        PackageLog::logAction(
-                            $validated['package_id'],
-                            'variant_service_selected',
-                            [
-                                'variant_group' => $validated['variant_group'],
-                                'service_name' => $service->service->name ?? 'Unknown',
-                            ]
-                        );
-                    } catch (\Exception $e) {
-                        \Log::error('Failed to log variant selection: ' . $e->getMessage());
+                        // Log the action (non-blocking)
+                        try {
+                            PackageLog::logAction(
+                                $validated['package_id'],
+                                'variant_service_selected',
+                                [
+                                    'variant_group' => $validated['variant_group'],
+                                    'service_name' => $service->service->name ?? 'Unknown',
+                                ]
+                            );
+                        } catch (\Exception $e) {
+                            \Log::error('Failed to log variant selection: ' . $e->getMessage());
+                        }
                     }
                 }
             }

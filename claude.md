@@ -1004,48 +1004,96 @@ SESSION_ENCRYPT=true  # 🔐 Włączone szyfrowanie
 
 **Cel:** Ochrona backupów przed nieautoryzowanym dostępem
 
-#### Skrypt backupu
+#### ⚠️ WAŻNE: Uniwersalny system (SQLite + MySQL)
 
-**Lokalizacja:** [scripts/backup-database.sh](scripts/backup-database.sh)
+**Status:** ✅ Wspiera oba środowiska (development + production)
 
-**Co robi:**
-1. Kopiuje `database/database.sqlite`
-2. Szyfruje za pomocą GPG (AES-256)
-3. Zapisuje do `storage/backups/db_backup_YYYYMMDD_HHMMSS.sqlite.gpg`
-4. Usuwa niezaszyfrowaną kopię
-5. Czyści backupy starsze niż 30 dni
+**Skrypty:**
+- [scripts/backup-database-universal.sh](scripts/backup-database-universal.sh) - **ZALECANY** dla dev i production
+- [scripts/backup-database.sh](scripts/backup-database.sh) - Legacy (tylko SQLite)
 
-**Ręczne uruchomienie:**
+#### Jak działa uniwersalny backup
+
+**Auto-detekcja typu bazy z `.env`:**
 ```bash
-docker exec platformapakiety-laravel.test-1 bash /var/www/html/scripts/backup-database.sh
+DB_CONNECTION=sqlite  → Backup SQLite (cp + gpg)
+DB_CONNECTION=mysql   → Backup MySQL (mysqldump + gpg)
+```
+
+**Development (SQLite):**
+1. Kopiuje `database/database.sqlite`
+2. Szyfruje GPG → `db_backup_YYYYMMDD_HHMMSS.sqlite.gpg`
+
+**Production (MySQL):**
+1. Eksportuje bazę → `mysqldump platformapakiety > backup.sql`
+2. Szyfruje GPG → `db_backup_YYYYMMDD_HHMMSS.sql.gpg`
+
+**Wspólne kroki:**
+3. Usuwa niezaszyfrowaną kopię
+4. Czyści backupy starsze niż 30 dni
+
+#### Ręczne uruchomienie
+
+**Development:**
+```bash
+docker exec platformapakiety-laravel.test-1 bash /var/www/html/scripts/backup-database-universal.sh
+```
+
+**Production:**
+```bash
+ssh user@your-server
+cd /var/www/html
+bash scripts/backup-database-universal.sh
 ```
 
 **Automatyzacja (cron):**
+
+**Development (Docker):**
 ```bash
-# Wejdź do kontenera
 docker exec -it platformapakiety-laravel.test-1 bash
-
-# Edytuj crontab
 crontab -e
+# Dodaj:
+0 3 * * * BACKUP_PASSWORD="$BACKUP_PASSWORD" /var/www/html/scripts/backup-database-universal.sh >> /var/www/html/storage/logs/backup.log 2>&1
+```
 
-# Dodaj linię (backup codziennie o 3:00 AM)
-0 3 * * * BACKUP_PASSWORD="$BACKUP_PASSWORD" /var/www/html/scripts/backup-database.sh >> /var/www/html/storage/logs/backup.log 2>&1
+**Production (serwer):**
+```bash
+ssh user@your-server
+crontab -e
+# Dodaj:
+0 3 * * * cd /var/www/html && BACKUP_PASSWORD="YourPassword" bash scripts/backup-database-universal.sh >> storage/logs/backup.log 2>&1
 ```
 
 #### Restore z backupu
 
-**Lokalizacja:** [scripts/restore-database.sh](scripts/restore-database.sh)
+**Skrypty:**
+- [scripts/restore-database-universal.sh](scripts/restore-database-universal.sh) - **ZALECANY** (SQLite + MySQL)
+- [scripts/restore-database.sh](scripts/restore-database.sh) - Legacy (tylko SQLite)
 
-**Użycie:**
+**Development:**
 ```bash
-# Restore z najnowszego backupu
-docker exec -it platformapakiety-laravel.test-1 bash /var/www/html/scripts/restore-database.sh
+# Interaktywny (wybierz z listy)
+docker exec -it platformapakiety-laravel.test-1 bash /var/www/html/scripts/restore-database-universal.sh
 
-# Restore z konkretnego backupu
-docker exec -it platformapakiety-laravel.test-1 bash /var/www/html/scripts/restore-database.sh db_backup_20251016_030000.sqlite.gpg
+# Konkretny backup
+docker exec -it platformapakiety-laravel.test-1 bash /var/www/html/scripts/restore-database-universal.sh db_backup_20251016_030000.sqlite.gpg
+```
+
+**Production:**
+```bash
+ssh user@your-server
+cd /var/www/html
+
+# Interaktywny
+bash scripts/restore-database-universal.sh
+
+# Konkretny backup (MySQL)
+bash scripts/restore-database-universal.sh db_backup_20251021_030000.sql.gpg
 ```
 
 **⚠️ Wymagane potwierdzenie:** Musisz wpisać `yes`
+
+**⚠️ MySQL:** Restore **zastępuje całą bazę** (wszystkie tabele DROP+CREATE)
 
 #### Konfiguracja hasła backupu
 
@@ -1067,14 +1115,17 @@ environment:
 
 #### Dokumentacja skryptów
 
-Pełna dokumentacja: [scripts/README.md](scripts/README.md)
+**Pełne przewodniki:**
+- [scripts/README.md](scripts/README.md) - Dokumentacja wszystkich skryptów
+- [BACKUP_PRODUCTION.md](BACKUP_PRODUCTION.md) - **⭐ Przewodnik MySQL dla production**
 
-Zawiera:
-- Szczegółowe instrukcje użycia
-- Konfiguracja cron
-- Troubleshooting
-- Eksport do chmury (S3, Google Drive)
-- Testowanie backupów
+**BACKUP_PRODUCTION.md zawiera:**
+- ✅ Porównanie SQLite vs MySQL
+- ✅ Szczegółowa konfiguracja production
+- ✅ Instalacja wymaganych narzędzi (mysqldump, gpg)
+- ✅ Troubleshooting dla MySQL
+- ✅ Eksport do chmury (S3, Google Drive)
+- ✅ Checklist przed wdrożeniem
 
 ---
 
