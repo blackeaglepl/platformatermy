@@ -181,6 +181,7 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                             return (
                                 <PersonServiceSelector
                                     key={groupName}
+                                    packageId={pkg.id}
                                     variantGroup={groupName}
                                     services={groupServices}
                                     isToggling={isToggling}
@@ -193,6 +194,7 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                         return (
                             <VariantServiceGroup
                                 key={groupName}
+                                packageId={pkg.id}
                                 variantGroup={groupName}
                                 services={groupServices}
                                 isToggling={isToggling}

@@ -2,13 +2,14 @@ import { PackageServiceUsage } from '@/types/package';
 import { router } from '@inertiajs/react';
 
 interface Props {
+    packageId: number;
     variantGroup: string;
     services: PackageServiceUsage[];
     isToggling: number | null;
     onToggle: (usage: PackageServiceUsage) => void;
 }
 
-export default function VariantServiceGroup({ variantGroup, services, isToggling, onToggle }: Props) {
+export default function VariantServiceGroup({ packageId, variantGroup, services, isToggling, onToggle }: Props) {
     const getGroupTitle = (groupName: string): string => {
         const osobaMatch = groupName.match(/^osoba(\d+)_/);
         if (osobaMatch) {
@@ -44,35 +45,26 @@ export default function VariantServiceGroup({ variantGroup, services, isToggling
     const handleSelectVariant = (variantServices: PackageServiceUsage[]) => {
         const fullySelected = isVariantFullySelected(variantServices);
 
-        if (fullySelected) {
-            // Unmark all services in this variant
-            variantServices.forEach(service => {
-                if (service.is_used) {
-                    onToggle(service);
-                }
-            });
-        } else {
-            // First, unmark all services from OTHER variants
-            const otherVariantServices = services.filter(s => !variantServices.includes(s) && s.is_used);
+        // CRITICAL FIX: Use fetch() with window.location for guaranteed fresh page load
+        const serviceIds = fullySelected ? [] : variantServices.map(s => s.id);
 
-            if (otherVariantServices.length > 0) {
-                // Unmark other variants first
-                otherVariantServices.forEach(service => {
-                    router.post(
-                        route('package-usage.toggle', service.id),
-                        {},
-                        { preserveScroll: true }
-                    );
-                });
-            }
+        const formData = new FormData();
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '');
+        formData.append('package_id', packageId.toString());
+        formData.append('variant_group', variantGroup);
+        serviceIds.forEach(id => formData.append('service_ids[]', id.toString()));
 
-            // Then mark all services in the selected variant
-            variantServices.forEach(service => {
-                if (!service.is_used) {
-                    onToggle(service);
-                }
-            });
-        }
+        fetch(route('package-usage.select-variant'), {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin',
+        }).then(() => {
+            // Force full page reload - bypasses Inertia completely
+            window.location.href = window.location.pathname + '?t=' + Date.now();
+        }).catch((error) => {
+            console.error('Error selecting variant:', error);
+            alert('Błąd podczas wyboru wariantu. Odśwież stronę.');
+        });
     };
 
     return (

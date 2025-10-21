@@ -49,6 +49,7 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function () {
 
     // Service usage routes
     Route::post('/package-usage/{usage}/toggle', [PackageServiceUsageController::class, 'toggle'])->name('package-usage.toggle');
+    Route::post('/package-usage/select-variant', [PackageServiceUsageController::class, 'selectVariant'])->name('package-usage.select-variant');
 });
 
 Route::patch('/dashboard', function (Request $request) {

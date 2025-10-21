@@ -289,27 +289,38 @@ class PackageController extends Controller
             'owner_name' => 'required|string|max:255',
         ]);
 
-        $oldOwner = $package->owner_name;
+        DB::beginTransaction();
 
-        $package->update([
-            'owner_name' => $validated['owner_name'],  // owner_name contains owner name
-        ]);
-
-        // Log owner change (non-blocking)
         try {
-            PackageLog::logAction(
-                $package->id,
-                'owner_updated',
-                [
-                    'old_value' => $oldOwner,
-                    'new_value' => $validated['owner_name'],
-                ]
-            );
-        } catch (\Exception $e) {
-            \Log::error('Failed to log owner update: ' . $e->getMessage());
-        }
+            $oldOwner = $package->owner_name;
 
-        return back()->with('success', 'Posiadacz pakietu został zaktualizowany!');
+            $package->update([
+                'owner_name' => $validated['owner_name'],  // owner_name contains owner name
+            ]);
+
+            // Log owner change (non-blocking)
+            try {
+                PackageLog::logAction(
+                    $package->id,
+                    'owner_updated',
+                    [
+                        'old_value' => $oldOwner,
+                        'new_value' => $validated['owner_name'],
+                    ]
+                );
+            } catch (\Exception $e) {
+                \Log::error('Failed to log owner update: ' . $e->getMessage());
+            }
+
+            DB::commit();
+
+            return back()->with('success', 'Posiadacz pakietu został zaktualizowany!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Failed to update owner: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Błąd podczas aktualizacji posiadacza pakietu.']);
+        }
     }
 
     /**
@@ -321,21 +332,32 @@ class PackageController extends Controller
             'notes' => 'nullable|string|max:500',
         ]);
 
-        $package->update([
-            'notes' => $validated['notes'] ?? null,
-        ]);
+        DB::beginTransaction();
 
-        // Log notes update (non-blocking)
         try {
-            PackageLog::logAction(
-                $package->id,
-                'notes_updated'
-            );
-        } catch (\Exception $e) {
-            \Log::error('Failed to log notes update: ' . $e->getMessage());
-        }
+            $package->update([
+                'notes' => $validated['notes'] ?? null,
+            ]);
 
-        return back()->with('success', 'Uwagi zostały zaktualizowane!');
+            // Log notes update (non-blocking)
+            try {
+                PackageLog::logAction(
+                    $package->id,
+                    'notes_updated'
+                );
+            } catch (\Exception $e) {
+                \Log::error('Failed to log notes update: ' . $e->getMessage());
+            }
+
+            DB::commit();
+
+            return back()->with('success', 'Uwagi zostały zaktualizowane!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Failed to update notes: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Błąd podczas aktualizacji uwag.']);
+        }
     }
 
     /**
@@ -353,22 +375,33 @@ class PackageController extends Controller
             'guest_count' => 'nullable|integer|min:1|max:50',
         ]);
 
-        $package->update([
-            'guest_count' => $validated['guest_count'] ?? null,
-        ]);
+        DB::beginTransaction();
 
-        // Log guest count update (non-blocking)
         try {
-            PackageLog::logAction(
-                $package->id,
-                'guest_count_updated',
-                ['new_count' => $validated['guest_count'] ?? null]
-            );
-        } catch (\Exception $e) {
-            \Log::error('Failed to log guest count update: ' . $e->getMessage());
-        }
+            $package->update([
+                'guest_count' => $validated['guest_count'] ?? null,
+            ]);
 
-        return back()->with('success', 'Liczba osób została zaktualizowana!');
+            // Log guest count update (non-blocking)
+            try {
+                PackageLog::logAction(
+                    $package->id,
+                    'guest_count_updated',
+                    ['new_count' => $validated['guest_count'] ?? null]
+                );
+            } catch (\Exception $e) {
+                \Log::error('Failed to log guest count update: ' . $e->getMessage());
+            }
+
+            DB::commit();
+
+            return back()->with('success', 'Liczba osób została zaktualizowana!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Failed to update guest count: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Błąd podczas aktualizacji liczby osób.']);
+        }
     }
 
     /**
