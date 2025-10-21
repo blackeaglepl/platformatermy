@@ -1,0 +1,127 @@
+Starting Container
+                                                                               
+  SQLSTATE[HY000] [2002] Connection refused (Connection: mysql, SQL: select e  
+
+  xists (select 1 from information_schema.tables where table_schema = 'larave  
+                                                                               
+  l' and table_name = 'migrations' and table_type in ('BASE TABLE', 'SYSTEM V  
+
+  ERSIONED')) as `exists`)                                                     
+In Connector.php line 66:
+                                             
+  SQLSTATE[HY000] [2002] Connection refused  
+                                             
+
+In Connection.php line 825:
+
+In Connection.php line 825:
+                                                                               
+  SQLSTATE[HY000] [2002] Connection refused (Connection: mysql, SQL: select e  
+  xists (select 1 from information_schema.tables where table_schema = 'larave  
+  l' and table_name = 'migrations' and table_type in ('BASE TABLE', 'SYSTEM V  
+  ERSIONED')) as `exists`)                                                     
+                                                                               
+
+In Connector.php line 66:
+                                             
+  SQLSTATE[HY000] [2002] Connection refused  
+                                             
+
+
+In Connection.php line 825:
+                                                                               
+  SQLSTATE[HY000] [2002] Connection refused (Connection: mysql, SQL: select e  
+  xists (select 1 from information_schema.tables where table_schema = 'larave  
+  l' and table_name = 'migrations' and table_type in ('BASE TABLE', 'SYSTEM V  
+  ERSIONED')) as `exists`)                                                     
+                                                                               
+
+In Connector.php line 66:
+                                             
+  SQLSTATE[HY000] [2002] Connection refused  
+                                             
+
+
+In Connection.php line 825:
+                                                                               
+  SQLSTATE[HY000] [2002] Connection refused (Connection: mysql, SQL: select e  
+  xists (select 1 from information_schema.tables where table_schema = 'larave  
+  l' and table_name = 'migrations' and table_type in ('BASE TABLE', 'SYSTEM V  
+  ERSIONED')) as `exists`)                                                     
+                                                                               
+
+In Connector.php line 66:
+                                             
+  SQLSTATE[HY000] [2002] Connection refused  
+                                             
+
+                                             
+
+  xists (select 1 from information_schema.tables where table_schema = 'larave  
+  l' and table_name = 'migrations' and table_type in ('BASE TABLE', 'SYSTEM V  
+  ERSIONED')) as `exists`)                                                     
+                                                                               
+                                                                               
+
+In Connector.php line 66:
+  SQLSTATE[HY000] [2002] Connection refused (Connection: mysql, SQL: select e  
+                                             
+  SQLSTATE[HY000] [2002] Connection refused  
+
+In Connection.php line 825:
+
+
+In Connection.php line 825:
+                                                                               
+
+In Connector.php line 66:
+                                             
+  SQLSTATE[HY000] [2002] Connection refused  
+                                             
+  SQLSTATE[HY000] [2002] Connection refused (Connection: mysql, SQL: select e  
+  xists (select 1 from information_schema.tables where table_schema = 'larave  
+  l' and table_name = 'migrations' and table_type in ('BASE TABLE', 'SYSTEM V  
+  ERSIONED')) as `exists`)                                                     
+                                                                               
+
+In Connection.php line 825:
+                                                                               
+  SQLSTATE[HY000] [2002] Connection refused (Connection: mysql, SQL: select e  
+  xists (select 1 from information_schema.tables where table_schema = 'larave  
+  l' and table_name = 'migrations' and table_type in ('BASE TABLE', 'SYSTEM V  
+  ERSIONED')) as `exists`)                                                     
+                                                                               
+
+In Connector.php line 66:
+                                             
+  SQLSTATE[HY000] [2002] Connection refused  
+                                             
+
+                                                                               
+
+In Connector.php line 66:
+                                             
+  SQLSTATE[HY000] [2002] Connection refused  
+                                             
+
+
+In Connection.php line 825:
+                                                                               
+  SQLSTATE[HY000] [2002] Connection refused (Connection: mysql, SQL: select e  
+  xists (select 1 from information_schema.tables where table_schema = 'larave  
+  l' and table_name = 'migrations' and table_type in ('BASE TABLE', 'SYSTEM V  
+  ERSIONED')) as `exists`)                                                     
+
+In Connection.php line 825:
+                                                                               
+                                                                               
+
+  SQLSTATE[HY000] [2002] Connection refused (Connection: mysql, SQL: select e  
+  xists (select 1 from information_schema.tables where table_schema = 'larave  
+In Connector.php line 66:
+  l' and table_name = 'migrations' and table_type in ('BASE TABLE', 'SYSTEM V  
+                                             
+  ERSIONED')) as `exists`)                                                     
+  SQLSTATE[HY000] [2002] Connection refused  
+                                             
+
