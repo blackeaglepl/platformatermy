@@ -1,0 +1,17 @@
+node_modules/
+.git/
+.vscode/
+.claude/
+tests/
+*.md
+!RAILWAY_DEPLOYMENT.md
+database/database.sqlite
+storage/logs/*.log
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+.env
+.env.backup
+.phpunit.result.cache
+.DS_Store
+Thumbs.db
