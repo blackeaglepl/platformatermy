@@ -11,9 +11,32 @@ Ten branch (`railway-test`) zawiera konfigurację do testowego deploymentu na Ra
 - `railway.json` - Konfiguracja Railway
 - `nixpacks.toml` - Build configuration (PHP 8.2, Node.js 22)
 - `.env.railway.example` - Przykładowa konfiguracja dla Railway
+- `.railwayignore` - Pliki do pominięcia przy deploymencie
+- `railway-deploy.bat` - ⭐ **Interaktywny skrypt deploymentu (Windows)**
+- `generate-app-key.bat` - Skrypt do generowania APP_KEY
 - `RAILWAY_DEPLOYMENT.md` - Ten plik
 
 ## 🚀 Deployment krok po kroku
+
+### ⭐ SPOSÓB ŁATWY: Użyj skryptu (Windows)
+
+**Najszybszy sposób - wszystko automatycznie:**
+
+1. Kliknij dwukrotnie: `railway-deploy.bat`
+2. Postępuj zgodnie z instrukcjami na ekranie
+3. Skrypt zrobi wszystko za Ciebie!
+
+**Co robi skrypt:**
+- ✅ Sprawdza czy jesteś na branchu `railway-test`
+- ✅ Instaluje Railway CLI (jeśli nie ma)
+- ✅ Loguje do Railway
+- ✅ Tworzy/linkuje projekt
+- ✅ Przypomina o MySQL i zmiennych
+- ✅ Deployuje aplikację
+
+---
+
+### SPOSÓB RĘCZNY: Krok po kroku
 
 ### 1. Zainstaluj Railway CLI
 
