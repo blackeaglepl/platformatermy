@@ -34,7 +34,11 @@
       "Bash(done)",
       "Bash(for i in {1..10})",
       "Bash(do echo \"Próba $i:\")",
-      "Bash(MSYS_NO_PATHCONV=1 docker logs platformapakiety-laravel.test-1)"
+      "Bash(MSYS_NO_PATHCONV=1 docker logs platformapakiety-laravel.test-1)",
+      "Bash(git commit:*)",
+      "Bash(git tag:*)",
+      "Bash(railway login:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
