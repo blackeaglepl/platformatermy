@@ -44,9 +44,6 @@ RUN npm ci
 # Copy application files
 COPY . .
 
-# Use Railway .env template (forces file sessions, MySQL config)
-RUN cp .env.railway .env
-
 # Build frontend
 RUN npm run build
 
