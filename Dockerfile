@@ -56,12 +56,11 @@ RUN mkdir -p storage/framework/views \
 # Set permissions
 RUN chmod -R 775 storage bootstrap/cache
 
-# Cache Laravel config
-RUN php artisan config:cache && \
-    php artisan route:cache
+# Note: We don't cache config during build because Railway sets PORT at runtime
+# Config cache will be done on first request or manually after deployment
 
 # Expose port
 EXPOSE 8080
 
-# Start server
-CMD php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
+# Start server with explicit port handling
+CMD ["sh", "-c", "php artisan config:clear && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"]
