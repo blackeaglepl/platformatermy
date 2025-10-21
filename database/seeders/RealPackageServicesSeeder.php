@@ -223,6 +223,24 @@ class RealPackageServicesSeeder extends Seeder
             'is_extra' => false,
         ]);
 
+        PackageService::create([
+            'id' => 22,
+            'name' => 'Masaż klasyczny',
+            'zone' => 'odnowy',
+            'description' => 'Masaż klasyczny całego ciała',
+            'duration' => 60,
+            'is_extra' => false,
+        ]);
+
+        PackageService::create([
+            'id' => 23,
+            'name' => 'Masaż ciepłymi olejkami',
+            'zone' => 'odnowy',
+            'description' => 'Masaż całego ciała ciepłymi olejkami',
+            'duration' => 60,
+            'is_extra' => false,
+        ]);
+
         // ========================================
         // PAKIET 1: Naturalna Harmonia
         // ========================================
@@ -283,9 +301,13 @@ class RealPackageServicesSeeder extends Seeder
         // PAKIET 5: Wspólna Regeneracja (dla 2 osób!)
         // ========================================
         DB::table('package_type_services')->insert([
-            ['package_type' => 5, 'service_id' => 8, 'quantity' => 2, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false], // 2x masaż
+            // Wariant A - masaż klasyczny (dla 2 osób)
+            ['package_type' => 5, 'service_id' => 22, 'quantity' => 2, 'is_variant' => true, 'variant_group' => 'masaz_a', 'is_extra' => false],
+            // Wariant B - masaż ciepłymi olejkami (dla 2 osób)
+            ['package_type' => 5, 'service_id' => 23, 'quantity' => 2, 'is_variant' => true, 'variant_group' => 'masaz_b', 'is_extra' => false],
+            // Pozostałe usługi
             ['package_type' => 5, 'service_id' => 10, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false],
-            ['package_type' => 5, 'service_id' => 16, 'quantity' => 2, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false], // 2x voucher
+            ['package_type' => 5, 'service_id' => 16, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false], // 1x voucher (zmienione z 2x)
             ['package_type' => 5, 'service_id' => 19, 'quantity' => 2, 'is_variant' => false, 'variant_group' => null, 'is_extra' => true], // 2x ręcznik
         ]);
 
@@ -299,7 +321,7 @@ class RealPackageServicesSeeder extends Seeder
             ['package_type' => 6, 'service_id' => 19, 'quantity' => 6, 'is_variant' => false, 'variant_group' => null, 'is_extra' => true], // 6x ręcznik
         ]);
 
-        $this->command->info('✅ Seeded 21 real package services');
+        $this->command->info('✅ Seeded 23 real package services');
         $this->command->info('✅ Seeded package_type_services for all 6 package types');
     }
 }

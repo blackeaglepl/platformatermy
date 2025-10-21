@@ -47,24 +47,15 @@ class Package extends Model
 
     /**
      * Get variant groups data for this package's usages
-     * Returns array with variant_group info joined from package_type_services
+     * Returns usages with variant_group already present from package_service_usage table
      */
     public function getUsagesWithVariantGroups()
     {
         return $this->usages()
             ->with('service')
-            ->get()
-            ->map(function ($usage) {
-                // Join variant_group from package_type_services
-                $variantInfo = \DB::table('package_type_services')
-                    ->where('package_type', $this->package_type)
-                    ->where('service_id', $usage->service_id)
-                    ->select('variant_group')
-                    ->first();
-
-                $usage->variant_group = $variantInfo ? $variantInfo->variant_group : null;
-                return $usage;
-            });
+            ->get();
+        // Note: variant_group is already available on each usage from package_service_usage table
+        // No need to join with package_type_services
     }
 
     public function getUsagePercentageAttribute()
@@ -85,8 +76,17 @@ class Package extends Model
 
         foreach ($allUsages as $usage) {
             if ($usage->variant_group) {
-                // Extract base group name (e.g., "odnowa_a" → "odnowa")
-                $baseGroupName = preg_replace('/_[a-z]$/i', '', $usage->variant_group);
+                // Extract base group name:
+                // - Keep person-based variants separate: "osoba1_masaz", "osoba2_masaz" (each person = separate unit)
+                // - Group other variants: "odnowa_a" → "odnowa" (all variants of same type = one unit)
+                $baseGroupName = $usage->variant_group;
+
+                // Check if it's NOT a person-based variant
+                if (!preg_match('/^osoba\d+_/', $baseGroupName)) {
+                    // For non-person variants, strip the suffix (e.g., "odnowa_a" → "odnowa")
+                    $baseGroupName = preg_replace('/_[a-z]$/i', '', $baseGroupName);
+                }
+                // Otherwise keep full name: "osoba1_masaz" stays as is
 
                 if (!isset($variantGroups[$baseGroupName])) {
                     $variantGroups[$baseGroupName] = [];
