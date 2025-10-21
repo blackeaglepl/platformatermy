@@ -5,7 +5,7 @@
     "nixpacksConfigPath": "nixpacks.toml"
   },
   "deploy": {
-    "startCommand": "sh -c 'php -S 0.0.0.0:${PORT:-8080} -t public'",
+    "startCommand": "sh -c 'php artisan config:clear && php -S 0.0.0.0:${PORT:-8080} -t public'",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
