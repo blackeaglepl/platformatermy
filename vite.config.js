@@ -30,4 +30,10 @@ export default defineConfig({
             input: 'resources/js/app.tsx',
         },
     },
+    // Fix for Vite 5: ensure manifest.json is in public/build/ not public/build/.vite/
+    experimental: {
+        renderBuiltUrl(filename) {
+            return '/' + filename;
+        },
+    },
 });
