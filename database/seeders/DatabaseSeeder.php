@@ -15,12 +15,12 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // User::factory()->create([
+        //     'name' => 'Test User',
+        //     'email' => 'test@example.com',
+        // ]);
 
-        // Seed real package services and types (19 services + 6 package types)
+        // Seed real package services and types (23 services + 6 package types)
         $this->call([
             RealPackageServicesSeeder::class,
         ]);
