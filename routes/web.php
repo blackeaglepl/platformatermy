@@ -5,6 +5,7 @@ use App\Http\Controllers\PackageController;
 use App\Http\Controllers\PackageServiceUsageController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Alert;
@@ -22,17 +23,14 @@ Route::get('/', function () {
 
 Route::get('/dashboard', function () {
     // FIXME(md): move to controller
-    $traffic = Traffic::latest()->get()->value('value');
-    $alert = Alert::latest()->get();
-    $alertType = $alert->value('type');
-    $alertMessage = $alert->value('text');
-    $alertEnabled = (bool) $alert->value('enabled');
+    $traffic = Traffic::first();
+    $alert = Alert::first();
 
     return Inertia::render('Dashboard', [
-        'traffic' => $traffic,
-        'alertType' => $alertType,
-        'alertMessage' => $alertMessage,
-        'alertEnabled' => $alertEnabled,
+        'traffic' => $traffic?->value ?? 0, // Default to 0 if no traffic record
+        'alertType' => $alert?->type ?? 'INFO', // Default to INFO if no alert
+        'alertMessage' => $alert?->text ?? '', // Default to empty string
+        'alertEnabled' => (bool) ($alert?->enabled ?? false), // Default to false
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -63,12 +61,17 @@ Route::patch('/dashboard', function (Request $request) {
             'enabled' => 'required|boolean',
         ]);
 
-        $alert = Alert::first();
-        $alert->type = $validated['type'];
-        // Security: Strip HTML tags to prevent XSS (Stored Cross-Site Scripting)
-        $alert->text = strip_tags($validated['text']);
-        $alert->enabled = $validated['enabled'];
-        $alert->save();
+        // Use updateOrCreate to handle both creating and updating
+        Alert::updateOrCreate(
+            ['id' => 1], // We use single alert with id=1
+            [
+                'type' => $validated['type'],
+                // Security: Strip HTML tags to prevent XSS (Stored Cross-Site Scripting)
+                'text' => strip_tags($validated['text']),
+                'enabled' => $validated['enabled'],
+                'order' => 1, // Default order
+            ]
+        );
     }
 
     // Update traffic if provided
@@ -77,9 +80,11 @@ Route::patch('/dashboard', function (Request $request) {
             'value' => 'required|integer|min:0|max:100',
         ]);
 
-        $traffic = Traffic::first();
-        $traffic->value = $validated['value'];
-        $traffic->save();
+        // Use updateOrCreate to handle both creating and updating
+        Traffic::updateOrCreate(
+            ['id' => 1], // We use single traffic record with id=1
+            ['value' => $validated['value']]
+        );
     }
 
     return Redirect::route('dashboard');

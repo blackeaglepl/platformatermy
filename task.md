@@ -182,6 +182,371 @@
 
 ---
 
+## 🎯 Milestone 6: Deployment na Zenbox (PRODUKCJA)
+**Deadline:** 2025-10-27 (dziś wieczorem!)
+**Status:** 🔄 In Progress
+**Środowisko:** Zenbox Hosting (LiteSpeed)
+
+### ⚠️ KRYTYCZNE INFORMACJE
+
+**Architektura:**
+- 🌐 **Strona publiczna (Astro):** `termygorce.pl` - NIE RUSZAMY
+- 🔐 **Panel admin (Laravel):** `panel.termygorce.pl` - PRODUKCJA
+- 🧪 **Panel testowy (Laravel):** `admin.tg.stronazen.pl` - ŚRODOWISKO TESTOWE
+
+**Istniejące funkcjonalności (NIE RUSZAĆ!):**
+- ✅ Zarządzanie alertami (API dla Astro: `/api/alerts`)
+- ✅ Zarządzanie ruchem (API dla Astro: `/api/traffic`)
+- ⚠️ Tabele `alerts` i `traffic` w bazie - KRYTYCZNE!
+
+**Nowa funkcjonalność (DODAJEMY):**
+- 🆕 System zarządzania pakietami usług
+- 🆕 Tabele: `packages`, `package_services`, `package_service_usage`, `package_logs`
+
+**Dostęp do serwera:**
+- **Host:** `s46.zenbox.pl`
+- **Login:** `mongaw`
+- **Hasło SSH:** ⏳ Oczekiwanie (dostępne wieczorem od informatyka)
+- **Baza danych:** MySQL `mongaw_e2o91`
+
+**Ścieżki na serwerze:**
+```
+/domains/tg.stronazen.pl/public_html/
+├── admin/     ← Środowisko testowe (admin.tg.stronazen.pl)
+└── dev/       ← Backup/deweloperskie
+
+/domains/panel.termygorce.pl/public_html/
+└── (struktura Laravel) ← PRODUKCJA
+```
+
+---
+
+### 📋 PROTOKÓŁ DEPLOYMENT - CHECKLIST
+
+#### FAZA 1: Przygotowanie lokalne (PRZED połączeniem SSH)
+- [ ] 🔄 **Przygotować build aplikacji:**
+  ```bash
+  # 1. Instalacja zależności produkcyjnych
+  composer install --no-dev --optimize-autoloader
+
+  # 2. Build frontendu
+  npm run build
+
+  # 3. Weryfikacja buildu
+  ls -la public/build/
+  ```
+
+- [ ] ⏳ **Przygotować listę plików do wgrania:**
+  - Backend: `app/Http/Controllers/Package*.php`
+  - Modele: `app/Models/Package*.php`
+  - Serwisy: `app/Services/PackagePdfService.php`
+  - Migracje: `database/migrations/*package*.php`
+  - Seedery: `database/seeders/RealPackageServicesSeeder.php`
+  - Frontend: `resources/js/Pages/Packages/`, `resources/js/Components/*Person*.tsx`
+  - Types: `resources/js/types/package.d.ts`
+  - Routing: `routes/web.php` (zaktualizowany)
+  - PDF templates: `public/pdf-templates/`
+  - Build: `public/build/` (po npm run build)
+
+- [ ] ⏳ **Przygotować komendy deployment:**
+  - [ ] Backup serwera
+  - [ ] Upload plików
+  - [ ] Migracje bazy
+  - [ ] Seedery
+  - [ ] Clear cache
+  - [ ] Test działania
+
+---
+
+#### FAZA 2: Połączenie i weryfikacja serwera
+- [ ] ⏳ **Połączyć się przez SSH:**
+  ```bash
+  ssh mongaw@s46.zenbox.pl
+  # Hasło: (od informatyka)
+  ```
+
+- [ ] ⏳ **Zlokalizować aplikację Laravel:**
+  ```bash
+  cd /domains/tg.stronazen.pl/public_html/admin
+  pwd
+  ls -la
+  ```
+
+- [ ] ⏳ **Sprawdzić obecną wersję aplikacji:**
+  ```bash
+  # Sprawdź czy system pakietów już istnieje
+  ls -la app/Models/Package.php
+  ls -la app/Http/Controllers/PackageController.php
+
+  # Sprawdź wersję Laravel
+  php artisan --version
+
+  # Sprawdź wersję PHP
+  php -v  # Potrzeba PHP 8.2+
+  ```
+
+- [ ] ⏳ **Sprawdzić bazę danych:**
+  ```bash
+  # Połącz się z MySQL
+  mysql -u mongaw_e2o91 -p mongaw_e2o91
+  # Hasło: E,ka8KPZXxd1GeSIrM-60,#8
+
+  # W MySQL:
+  SHOW TABLES;
+
+  # Sprawdź czy tabele pakietów już istnieją:
+  SHOW TABLES LIKE 'packages%';
+
+  # Wyjdź z MySQL:
+  exit;
+  ```
+
+---
+
+#### FAZA 3: Backup (KRYTYCZNY KROK!)
+- [ ] ⏳ **Backup bazy danych:**
+  ```bash
+  # Utwórz katalog backups jeśli nie istnieje
+  mkdir -p /domains/tg.stronazen.pl/backups
+
+  # Backup MySQL
+  mysqldump -u mongaw_e2o91 -p'E,ka8KPZXxd1GeSIrM-60,#8' mongaw_e2o91 > /domains/tg.stronazen.pl/backups/db_backup_$(date +%Y%m%d_%H%M%S).sql
+
+  # Weryfikacja backupu
+  ls -lh /domains/tg.stronazen.pl/backups/
+  ```
+
+- [ ] ⏳ **Backup plików aplikacji:**
+  ```bash
+  cd /domains/tg.stronazen.pl/public_html/
+
+  # Backup całego katalogu admin
+  tar -czf /domains/tg.stronazen.pl/backups/admin_backup_$(date +%Y%m%d_%H%M%S).tar.gz admin/
+
+  # Weryfikacja
+  ls -lh /domains/tg.stronazen.pl/backups/
+  ```
+
+- [ ] ⏳ **Backup pliku .env:**
+  ```bash
+  cp admin/.env /domains/tg.stronazen.pl/backups/.env.backup_$(date +%Y%m%d_%H%M%S)
+  ```
+
+---
+
+#### FAZA 4: Upload nowych plików
+- [ ] ⏳ **Przełączyć aplikację w tryb maintenance:**
+  ```bash
+  cd /domains/tg.stronazen.pl/public_html/admin
+  php artisan down --message="Aktualizacja systemu pakietów" --retry=60
+  ```
+
+- [ ] ⏳ **Upload przez SCP/SFTP:**
+  ```bash
+  # Z lokalnego komputera (Git Bash):
+
+  # 1. Backend files
+  scp -r app/Http/Controllers/Package* mongaw@s46.zenbox.pl:/domains/tg.stronazen.pl/public_html/admin/app/Http/Controllers/
+  scp -r app/Models/Package* mongaw@s46.zenbox.pl:/domains/tg.stronazen.pl/public_html/admin/app/Models/
+  scp app/Services/PackagePdfService.php mongaw@s46.zenbox.pl:/domains/tg.stronazen.pl/public_html/admin/app/Services/
+
+  # 2. Migracje i seedery
+  scp database/migrations/*package*.php mongaw@s46.zenbox.pl:/domains/tg.stronazen.pl/public_html/admin/database/migrations/
+  scp database/seeders/RealPackageServicesSeeder.php mongaw@s46.zenbox.pl:/domains/tg.stronazen.pl/public_html/admin/database/seeders/
+
+  # 3. Frontend (React)
+  scp -r resources/js/Pages/Packages mongaw@s46.zenbox.pl:/domains/tg.stronazen.pl/public_html/admin/resources/js/Pages/
+  scp resources/js/Components/PersonServiceSelector.tsx mongaw@s46.zenbox.pl:/domains/tg.stronazen.pl/public_html/admin/resources/js/Components/
+  scp resources/js/Components/VariantServiceGroup.tsx mongaw@s46.zenbox.pl:/domains/tg.stronazen.pl/public_html/admin/resources/js/Components/
+  scp resources/js/types/package.d.ts mongaw@s46.zenbox.pl:/domains/tg.stronazen.pl/public_html/admin/resources/js/types/
+
+  # 4. Routes
+  scp routes/web.php mongaw@s46.zenbox.pl:/domains/tg.stronazen.pl/public_html/admin/routes/
+
+  # 5. PDF templates
+  scp -r public/pdf-templates mongaw@s46.zenbox.pl:/domains/tg.stronazen.pl/public_html/admin/public/
+
+  # 6. Build (po npm run build lokalnie)
+  scp -r public/build/* mongaw@s46.zenbox.pl:/domains/tg.stronazen.pl/public_html/admin/public/build/
+  ```
+
+- [ ] ⏳ **Ustawić uprawnienia:**
+  ```bash
+  # Na serwerze (SSH):
+  cd /domains/tg.stronazen.pl/public_html/admin
+
+  chmod -R 755 storage bootstrap/cache
+  chown -R mongaw:mongaw storage bootstrap/cache
+  ```
+
+---
+
+#### FAZA 5: Migracje i seedery
+- [ ] ⏳ **Sprawdzić które migracje muszą być uruchomione:**
+  ```bash
+  php artisan migrate:status
+  ```
+
+- [ ] ⏳ **Uruchomić migracje (TYLKO dla pakietów!):**
+  ```bash
+  # Dry-run (bez faktycznego wykonania)
+  php artisan migrate --pretend
+
+  # Jeśli wszystko OK, wykonaj:
+  php artisan migrate --force
+
+  # Weryfikacja w bazie:
+  mysql -u mongaw_e2o91 -p'E,ka8KPZXxd1GeSIrM-60,#8' mongaw_e2o91 -e "SHOW TABLES LIKE 'packages%';"
+  ```
+
+- [ ] ⏳ **Uruchomić seedery (dane usług):**
+  ```bash
+  php artisan db:seed --class=RealPackageServicesSeeder --force
+
+  # Weryfikacja:
+  mysql -u mongaw_e2o91 -p'E,ka8KPZXxd1GeSIrM-60,#8' mongaw_e2o91 -e "SELECT COUNT(*) FROM package_services;"
+  ```
+
+---
+
+#### FAZA 6: Konfiguracja .env (BEZPIECZEŃSTWO)
+- [ ] ⏳ **Zaktualizować .env (produkcja):**
+  ```bash
+  nano /domains/tg.stronazen.pl/public_html/admin/.env
+
+  # ZMIEŃ:
+  APP_ENV=production         # Było: local
+  APP_DEBUG=false            # Było: true
+  SESSION_ENCRYPT=true       # Było: false
+
+  # DODAJ (jeśli brak):
+  BACKUP_PASSWORD=YourSecureBackupPassword123!
+
+  # Zapisz: Ctrl+O, Enter, Ctrl+X
+  ```
+
+- [ ] ⏳ **Clear cache i rebuild:**
+  ```bash
+  php artisan config:clear
+  php artisan cache:clear
+  php artisan route:clear
+  php artisan view:clear
+
+  # Zbuduj cache produkcyjny:
+  php artisan config:cache
+  php artisan route:cache
+  php artisan view:cache
+  ```
+
+---
+
+#### FAZA 7: Testy funkcjonalności
+- [ ] ⏳ **Wyłączyć maintenance mode:**
+  ```bash
+  php artisan up
+  ```
+
+- [ ] ⏳ **Przetestować w przeglądarce:**
+  - [ ] Otwórz: https://admin.tg.stronazen.pl/login
+  - [ ] Zaloguj się
+  - [ ] Sprawdź Dashboard → czy działają ALERTY i RUCH (stare funkcje)
+  - [ ] Kliknij "Pakiety" w menu
+  - [ ] Dodaj testowy pakiet
+  - [ ] Zaznacz wykorzystanie usługi
+  - [ ] Wygeneruj PDF pakietu
+  - [ ] Sprawdź logi (brak błędów 500)
+
+- [ ] ⏳ **Sprawdzić logi na serwerze:**
+  ```bash
+  tail -50 /domains/tg.stronazen.pl/public_html/admin/storage/logs/laravel.log
+  ```
+
+- [ ] ⏳ **Przetestować API (dla strony Astro - NIE MOŻE BYĆ ZEPSUTE!):**
+  ```bash
+  curl https://admin.tg.stronazen.pl/api/alerts
+  curl https://admin.tg.stronazen.pl/api/traffic
+
+  # Powinny zwrócić JSON (nie błąd 500)
+  ```
+
+---
+
+#### FAZA 8: Deployment na PRODUKCJĘ (panel.termygorce.pl)
+**UWAGA: Wykonać TYLKO jeśli testy na admin.tg.stronazen.pl przeszły OK!**
+
+- [ ] ⏳ **Powtórzyć FAZY 2-7 dla produkcji:**
+  ```bash
+  # Zmień ścieżki na:
+  /domains/panel.termygorce.pl/public_html/
+
+  # Zmień URL na:
+  https://panel.termygorce.pl
+  ```
+
+- [ ] ⏳ **Backup produkcji (KRYTYCZNY!):**
+  ```bash
+  # Identycznie jak FAZA 3, ale dla panel.termygorce.pl
+  ```
+
+---
+
+### 🚨 ROLLBACK PLAN (jeśli coś pójdzie nie tak)
+
+#### Scenariusz A: Błąd w migracji
+```bash
+# Cofnij ostatnią migrację
+php artisan migrate:rollback --step=1
+
+# Przywróć bazę z backupu
+mysql -u mongaw_e2o91 -p'E,ka8KPZXxd1GeSIrM-60,#8' mongaw_e2o91 < /domains/tg.stronazen.pl/backups/db_backup_YYYYMMDD_HHMMSS.sql
+```
+
+#### Scenariusz B: Aplikacja nie działa po wgraniu plików
+```bash
+# Przywróć cały katalog z backupu
+cd /domains/tg.stronazen.pl/public_html/
+rm -rf admin/
+tar -xzf /domains/tg.stronazen.pl/backups/admin_backup_YYYYMMDD_HHMMSS.tar.gz
+```
+
+#### Scenariusz C: Błąd 500 po deployment
+```bash
+# 1. Włącz tryb maintenance
+php artisan down
+
+# 2. Sprawdź logi
+tail -100 storage/logs/laravel.log
+
+# 3. Clear cache
+php artisan config:clear
+php artisan cache:clear
+
+# 4. Napraw uprawnienia
+chmod -R 755 storage bootstrap/cache
+chown -R mongaw:mongaw storage bootstrap/cache
+
+# 5. Jeśli nie pomaga - rollback (Scenariusz B)
+```
+
+---
+
+### 📊 Progress Tracking
+
+**Status:** 🔄 In Progress
+
+- [ ] ⏳ **FAZA 1:** Przygotowanie lokalne (0%)
+- [ ] ⏳ **FAZA 2:** Połączenie SSH (0%)
+- [ ] ⏳ **FAZA 3:** Backup (0%)
+- [ ] ⏳ **FAZA 4:** Upload plików (0%)
+- [ ] ⏳ **FAZA 5:** Migracje (0%)
+- [ ] ⏳ **FAZA 6:** Konfiguracja (0%)
+- [ ] ⏳ **FAZA 7:** Testy (0%)
+- [ ] ⏳ **FAZA 8:** Produkcja (0%)
+
+**Szacowany czas:** 30-45 minut (po uzyskaniu hasła SSH)
+
+---
+
 ## 📋 Backlog - Funkcjonalności przyszłościowe
 
 ### Priorytet Niski
@@ -224,6 +589,50 @@
 ---
 
 ## 📝 Change Log
+
+### 2025-10-27 (09:00-12:00) - Przygotowanie do deployment Zenbox
+**Milestone 6 - Deployment Planning (🔄 In Progress)**
+
+**Analiza środowiska:**
+- ✅ Zidentyfikowano architekturę: Astro (publiczna) + Laravel (admin panel)
+- ✅ Zlokalizowano środowisko testowe: `admin.tg.stronazen.pl`
+- ✅ Potwierdzono produkcję: `panel.termygorce.pl`
+- ✅ Ustalono że system pakietów NIE istnieje na serwerze (czysty deployment)
+- ✅ Potwierdzono że istniejące funkcje (alerty + ruch) DZIAŁAJĄ i nie mogą być naruszone
+
+**Infrastruktura Zenbox:**
+- Host: `s46.zenbox.pl` (LiteSpeed)
+- Login: `mongaw`
+- Baza: MySQL `mongaw_e2o91`
+- PHP: Do weryfikacji (potrzeba 8.2+)
+- Hasło SSH: ⏳ Oczekiwanie (dostępne wieczorem od informatyka)
+
+**Struktura na serwerze:**
+```
+/domains/tg.stronazen.pl/public_html/admin/  ← TEST
+/domains/panel.termygorce.pl/public_html/    ← PRODUKCJA
+```
+
+**Przygotowanie dokumentacji:**
+- ✅ Utworzono **Milestone 6: Deployment na Zenbox** w task.md
+- ✅ Przygotowano kompletny protokół deployment (8 FAZ)
+- ✅ Dodano ROLLBACK PLAN (3 scenariusze)
+- ✅ Przygotowano checklist z konkretnymi komendami
+- ✅ Ustalono strategię: TEST → weryfikacja → PRODUKCJA
+
+**Pliki do wgrania:**
+- Backend: 4 kontrolery, 4 modele, 1 serwis
+- Migracje: 14 plików (system pakietów)
+- Seeder: 1 plik (dane usług)
+- Frontend: Katalog Packages/, 2 komponenty, 1 type definition
+- Assets: PDF templates, build Vite
+
+**Next Steps:**
+1. ⏳ Oczekiwanie na hasło SSH (wieczór)
+2. ⏳ FAZA 1: Build lokalny (composer, npm)
+3. ⏳ FAZA 2-8: Deployment zgodnie z protokołem w task.md
+
+---
 
 ### 2025-10-13 (16:00-18:00) - Setup projektu
 - ✅ Utworzono task.md

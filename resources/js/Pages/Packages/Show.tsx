@@ -391,6 +391,18 @@ export default function Show({ auth, package: pkg, flash }: Props) {
                                 <div>
                                     <div className="text-sm font-medium text-gray-500">Data utworzenia</div>
                                     <div className="text-lg font-semibold text-gray-900">{pkg.created_at}</div>
+                                    <div className="text-xs text-gray-500 mt-1">
+                                        ważny do: {(() => {
+                                            const createdDate = new Date(pkg.created_at);
+                                            const validUntil = new Date(createdDate);
+                                            validUntil.setDate(createdDate.getDate() + 7);
+                                            return validUntil.toLocaleDateString('pl-PL', {
+                                                year: 'numeric',
+                                                month: '2-digit',
+                                                day: '2-digit'
+                                            });
+                                        })()}
+                                    </div>
                                 </div>
                             </div>
 
