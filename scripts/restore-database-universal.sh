@@ -19,7 +19,16 @@
 
 # Configuration
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="/var/www/html"
+
+# Auto-detect if running in Docker or on regular server
+if [ -f "/.dockerenv" ] || [ -d "/var/www/html/vendor" ]; then
+    # Running in Docker container
+    PROJECT_ROOT="/var/www/html"
+else
+    # Running on regular server - use script location
+    PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
+fi
+
 BACKUP_DIR="$PROJECT_ROOT/storage/backups"
 SQLITE_DB_FILE="$PROJECT_ROOT/database/database.sqlite"
 
@@ -49,7 +58,20 @@ info() {
 
 # Load environment variables from .env if not already set
 if [ -f "$PROJECT_ROOT/.env" ]; then
-    export $(grep -v '^#' "$PROJECT_ROOT/.env" | xargs)
+    # Read .env safely (handles quotes and special characters)
+    while IFS='=' read -r key value; do
+        # Skip comments and empty lines
+        [[ $key =~ ^#.*$ ]] && continue
+        [[ -z $key ]] && continue
+
+        # Remove quotes from value if present
+        value=$(echo "$value" | sed -e "s/^'//" -e "s/'$//" -e 's/^"//' -e 's/"$//')
+
+        # Export variable if not already set
+        if [ -z "${!key}" ]; then
+            export "$key=$value"
+        fi
+    done < "$PROJECT_ROOT/.env"
 fi
 
 # Check if GPG is installed

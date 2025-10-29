@@ -68,7 +68,7 @@ class PackageServiceUsageController extends Controller
                     $recentLog = PackageLog::where('package_id', $usage->package_id)
                         ->where('action_type', $actionType)
                         ->where('created_at', '>', now()->subSeconds(2))
-                        ->whereRaw("details->>'service_name' = ?", [$usage->service->name])
+                        ->where('details->service_name', $usage->service->name)
                         ->first();
 
                     if (!$recentLog) {
@@ -98,7 +98,7 @@ class PackageServiceUsageController extends Controller
                     $recentLog = PackageLog::where('package_id', $usage->package_id)
                         ->where('action_type', $actionType)
                         ->where('created_at', '>', now()->subSeconds(2))
-                        ->whereRaw("details->>'service_name' = ?", [$usage->service->name])
+                        ->where('details->service_name', $usage->service->name)
                         ->first();
 
                     if (!$recentLog) {

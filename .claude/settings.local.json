@@ -34,7 +34,9 @@
       "Bash(done)",
       "Bash(for i in {1..10})",
       "Bash(do echo \"Próba $i:\")",
-      "Bash(MSYS_NO_PATHCONV=1 docker logs platformapakiety-laravel.test-1)"
+      "Bash(MSYS_NO_PATHCONV=1 docker logs platformapakiety-laravel.test-1)",
+      "Read(//f/Windsurf/Prod Platforma/public/build/.vite/**)",
+      "Read(//f/Windsurf/Prod Platforma/app/Http/Controllers/**)"
     ],
     "deny": [],
     "ask": []

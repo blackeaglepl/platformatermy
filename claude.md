@@ -1315,8 +1315,11 @@ docker exec platformapakiety-laravel.test-1 bash -c "
 
 ### Dokumentacja projektu
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** - Pełny przewodnik deployment (WinSCP, SSH, production setup)
+- **[MANUAL_BACKUP_GUIDE.md](MANUAL_BACKUP_GUIDE.md)** - 💾 Przewodnik ręcznych backupów (przed migracją, deployment)
+- **[DISASTER_RECOVERY_TEST.md](DISASTER_RECOVERY_TEST.md)** - 🚨 Symulacja awarii i testy restore (OBOWIĄZKOWE przed produkcją)
 - **[SECURITY.md](SECURITY.md)** - Polityka bezpieczeństwa i raportowanie błędów
 - **[scripts/README.md](scripts/README.md)** - Dokumentacja skryptów backup/restore
+- **[BACKUP_PRODUCTION.md](BACKUP_PRODUCTION.md)** - Dokumentacja backupów MySQL w production
 
 ### Dokumentacja zewnętrzna
 - [Laravel 11 Documentation](https://laravel.com/docs/11.x)

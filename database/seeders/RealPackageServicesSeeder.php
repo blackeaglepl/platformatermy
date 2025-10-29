@@ -306,7 +306,7 @@ class RealPackageServicesSeeder extends Seeder
             // Wariant B - masaż ciepłymi olejkami (1x)
             ['package_type' => 5, 'service_id' => 23, 'quantity' => 1, 'is_variant' => true, 'variant_group' => 'masaz_b', 'is_extra' => false, 'is_visible' => true],
             // Pozostałe usługi
-            ['package_type' => 5, 'service_id' => 10, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true],
+            ['package_type' => 5, 'service_id' => 9, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true], // ZMIENIONE: 2,5h zamiast 1,5h
             ['package_type' => 5, 'service_id' => 16, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => false, 'is_visible' => true], // 1x voucher
             ['package_type' => 5, 'service_id' => 19, 'quantity' => 1, 'is_variant' => false, 'variant_group' => null, 'is_extra' => true, 'is_visible' => true], // 1x ręcznik (zmienione z 2x)
         ]);

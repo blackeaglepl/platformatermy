@@ -438,6 +438,51 @@
   php artisan view:cache
   ```
 
+- [ ] ⏳ **Konfiguracja automatycznych backupów MySQL (30 dni retencji):**
+  ```bash
+  # 1. Sprawdź czy skrypty backupów są na serwerze
+  ls -la scripts/backup-database-universal.sh
+  ls -la scripts/restore-database-universal.sh
+
+  # 2. Ustaw uprawnienia wykonywania
+  chmod +x scripts/backup-database-universal.sh
+  chmod +x scripts/restore-database-universal.sh
+
+  # 3. Utwórz katalog backupów jeśli nie istnieje
+  mkdir -p storage/backups
+  chmod 755 storage/backups
+
+  # 4. Test ręczny backupu
+  BACKUP_PASSWORD="${BACKUP_PASSWORD}" bash scripts/backup-database-universal.sh
+
+  # 5. Sprawdź czy backup powstał
+  ls -lh storage/backups/
+  # Powinien być plik: db_backup_YYYYMMDD_HHMMSS.sql.gpg
+
+  # 6. Dodaj cron job (backup codziennie o 3:00, retencja 30 dni)
+  crontab -e
+  # Dodaj linię:
+  # 0 3 * * * cd /domains/tg.stronazen.pl/public_html/admin && BACKUP_PASSWORD="<HASŁO_Z_ENV>" bash scripts/backup-database-universal.sh >> storage/logs/backup.log 2>&1
+
+  # 7. Weryfikuj cron job
+  crontab -l | grep backup
+
+  # 8. Monitorowanie (następnego dnia)
+  tail -50 storage/logs/backup.log
+  ls -lh storage/backups/
+  ```
+
+  **⚠️ WAŻNE:**
+  - Skrypt automatycznie usuwa backupy starsze niż 30 dni
+  - Backupy są szyfrowane GPG (hasło z `BACKUP_PASSWORD` w .env)
+  - Rozmiar pojedynczego backupu: ~2MB (dla ~1000 pakietów)
+  - Całkowity rozmiar 30 dni: ~60MB (niewiele!)
+  - Przywracanie: `bash scripts/restore-database-universal.sh` (interaktywny wybór)
+
+  **Dokumentacja:**
+  - Pełny przewodnik: [BACKUP_PRODUCTION.md](BACKUP_PRODUCTION.md)
+  - Instrukcje restore: [scripts/README.md](scripts/README.md)
+
 ---
 
 #### FAZA 7: Testy funkcjonalności
@@ -467,6 +512,73 @@
   curl https://admin.tg.stronazen.pl/api/traffic
 
   # Powinny zwrócić JSON (nie błąd 500)
+  ```
+
+---
+
+#### FAZA 7a: 🚨 TEST DISASTER RECOVERY (KRYTYCZNY!)
+**⚠️ OBOWIĄZKOWY TEST PRZED PRODUKCJĄ!**
+
+- [ ] ⏳ **Przeprowadzić symulację awarii zgodnie z [DISASTER_RECOVERY_TEST.md](DISASTER_RECOVERY_TEST.md):**
+
+  **Cel:** Upewnić się że backupy działają i da się przywrócić bazę w razie awarii.
+
+  **Wymagania:**
+  - Zarezerwuj 45-60 minut
+  - Test TYLKO na `admin.tg.stronazen.pl` (środowisko testowe)
+  - Kartę wyników przygotuj w notatniku
+
+  **3 scenariusze do przetestowania:**
+
+  **Scenariusz 1: Błędna migracja**
+  ```bash
+  # Symulacja: php artisan migrate:fresh (usuwa wszystko)
+  # Test: Czy restore przywraca strukturę + dane?
+  # Cel: < 5 minut od awarii do przywrócenia
+  ```
+
+  **Scenariusz 2: Przypadkowe usunięcie danych**
+  ```bash
+  # Symulacja: DELETE FROM packages (usuwa pakiety)
+  # Test: Czy restore przywraca dane z relacjami?
+  # Cel: < 3 minuty
+  ```
+
+  **Scenariusz 3: Korupcja struktury bazy**
+  ```bash
+  # Symulacja: Uszkodzone foreign keys/indexy
+  # Test: Czy restore naprawia strukturę?
+  # Cel: < 5 minut
+  ```
+
+  **Checklist po każdym scenariuszu:**
+  - [ ] Backup się odszyfrował (hasło działa)
+  - [ ] Restore zakończył się bez błędów
+  - [ ] Liczba pakietów zgodna z oczekiwaną
+  - [ ] Relacje między tabelami działają
+  - [ ] Aplikacja działa w przeglądarce
+  - [ ] Stare funkcje (alerty, ruch) nienaruszone
+
+  **Dokumentacja testu:**
+  - [ ] Wypełnij kartę wyników w DISASTER_RECOVERY_TEST.md
+  - [ ] Zanotuj czas każdego restore
+  - [ ] Udokumentuj problemy (jeśli były)
+  - [ ] Zapisz wnioski
+
+  **Warunki przejścia do FAZY 8 (produkcja):**
+  - ✅ Wszystkie 3 scenariusze zakończone SUKCESEM
+  - ✅ Średni czas restore < 5 minut
+  - ✅ Hasło BACKUP_PASSWORD zapisane w menedżerze haseł
+  - ✅ Zespół zna procedurę restore
+  - ✅ Brak krytycznych problemów
+
+  **Jeśli test się nie powiódł:**
+  ```
+  ❌ NIE przechodź do FAZY 8!
+  1. Zidentyfikuj problem
+  2. Napraw (zmień hasło / popraw skrypt / etc.)
+  3. Powtórz test DR od początku
+  4. Tylko po pełnym sukcesie → FAZA 8
   ```
 
 ---
@@ -539,11 +651,16 @@ chown -R mongaw:mongaw storage bootstrap/cache
 - [ ] ⏳ **FAZA 3:** Backup (0%)
 - [ ] ⏳ **FAZA 4:** Upload plików (0%)
 - [ ] ⏳ **FAZA 5:** Migracje (0%)
-- [ ] ⏳ **FAZA 6:** Konfiguracja (0%)
-- [ ] ⏳ **FAZA 7:** Testy (0%)
+- [ ] ⏳ **FAZA 6:** Konfiguracja + Backupy (0%)
+- [ ] ⏳ **FAZA 7:** Testy funkcjonalności (0%)
+- [ ] ⏳ **FAZA 7a:** 🚨 TEST DISASTER RECOVERY (0%) - **KRYTYCZNY!**
 - [ ] ⏳ **FAZA 8:** Produkcja (0%)
 
-**Szacowany czas:** 30-45 minut (po uzyskaniu hasła SSH)
+**Szacowany czas:**
+- FAZY 1-7: ~30-45 minut (deployment testowy)
+- FAZA 7a: ~45-60 minut (test DR - OBOWIĄZKOWY)
+- FAZA 8: ~20-30 minut (deployment produkcyjny)
+- **TOTAL: ~2-2.5 godziny**
 
 ---
 
